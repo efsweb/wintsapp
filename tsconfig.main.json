@@ -1,0 +1,18 @@
+//tsconfig.main.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "lib": ["esnext"],
+    "jsx": "preserve"
+  },
+  "include": [
+    "src/main/**/*",   // Inclui o código do main
+    "src/preload/**/*" // Inclui o código do preload
+  ],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,7 @@
+.bgdark{
+	background-color: #212529;
+}
+
+.bd-grad{
+	background: linear-gradient(to right, #212529, #FFF);
+}

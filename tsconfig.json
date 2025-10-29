@@ -1,0 +1,28 @@
+//tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "lib": ["dom", "esnext"],
+    "jsx": "react-jsx",
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",  // Define a raiz do projeto como base para resolver módulos
+    "paths": {
+      "*": ["src/*"]  // Resolva módulos a partir da pasta 'src'
+    },
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
