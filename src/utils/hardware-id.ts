@@ -3,7 +3,7 @@ import os from "os";
 import crypto from "crypto";
 import { exec } from "child_process";
 import { promisify } from "util";
-import si from "systeminformation";
+//import si from "systeminformation";
 
 const execAsync = promisify(exec);
 
