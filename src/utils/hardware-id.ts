@@ -3,8 +3,18 @@ import os from "os";
 import crypto from "crypto";
 import { exec } from "child_process";
 import { promisify } from "util";
+import si from "systeminformation";
 
 const execAsync = promisify(exec);
+
+async function commandExists(cmd: string): Promise<boolean> {
+  try {
+    await execAsync(`where ${cmd}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Função auxiliar: tenta pegar o serial do disco
 async function getDiskSerial(): Promise<string> {
@@ -13,7 +23,15 @@ async function getDiskSerial(): Promise<string> {
 
     switch (process.platform) {
       case "win32":
-        command = "wmic diskdrive get SerialNumber";
+        command = "wmic diskdrive get SerialNumber"; //Antigo funciona só em versões antigas do Windows
+        try{
+          const hasPowerShell = await commandExists("powershell");
+          if (hasPowerShell) {
+            command = 'powershell "Get-WmiObject win32_physicalmedia | Select-Object -ExpandProperty SerialNumber"';
+          }
+        }catch{
+          console.log('Não tem powershell');
+        }
         break;
       case "darwin":
         command = "system_profiler SPHardwareDataType | grep 'Serial Number'";
