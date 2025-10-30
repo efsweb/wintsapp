@@ -2,7 +2,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { SerialPort } from 'serialport';
 
 import { checkInternetConnection } from './network.js';
@@ -107,9 +107,11 @@ function startUSBWatcher() {
 }
 
 app.whenReady().then(async () => {
-  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = await import(
-    path.resolve(__dirname, "../utils/dbconn.js")
-  );
+  const dbPath = path.resolve(__dirname, "../utils/dbconn.js");
+
+  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
+  await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
+  
   getLastEvents = gl;
   closeDB = cdb;
 

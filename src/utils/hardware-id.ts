@@ -19,18 +19,49 @@ async function commandExists(cmd: string): Promise<boolean> {
 // Função auxiliar: tenta pegar o serial do disco
 async function getDiskSerial(): Promise<string> {
   try {
-    let command: string;
+    let command: string = "";
 
     switch (process.platform) {
       case "win32":
-        command = "wmic diskdrive get SerialNumber"; //Antigo funciona só em versões antigas do Windows
-        try{
-          const hasPowerShell = await commandExists("powershell");
-          if (hasPowerShell) {
-            command = 'powershell "Get-WmiObject win32_physicalmedia | Select-Object -ExpandProperty SerialNumber"';
+        const hasWmic = await commandExists("wmic");
+
+        if (hasWmic) {
+          try {
+            const { stdout } = await execAsync("wmic diskdrive get SerialNumber");
+            const match = stdout.match(/[A-Za-z0-9_-]+/);
+            if (match) return match[0].trim();
+          } catch {
+            // tenta o próximo método
           }
-        }catch{
-          console.log('Não tem powershell');
+        }
+
+        const hasPowerShell = await commandExists("powershell");
+        if (hasPowerShell) {
+          try {
+            // Tenta Storage API (Windows 8+)
+            const { stdout } = await execAsync(
+              'powershell -NoProfile -Command "Get-PhysicalDisk | Select -ExpandProperty SerialNumber"'
+            );
+            const match = stdout.match(/[A-Za-z0-9_-]+/);
+            console.log("veioooo");
+            return match ? match[0].trim() : "UNKNOWN";
+          } catch {
+            // Fallback: WMI antigo
+            const { stdout } = await execAsync(
+              'powershell -NoProfile -Command "Get-WmiObject Win32_DiskDrive | Select -ExpandProperty SerialNumber"'
+            );
+            const match = stdout.match(/[A-Za-z0-9_-]+/);
+            return match ? match[0].trim() : "UNKNOWN";
+          }
+        }
+
+        // Último recurso: Volume ID
+        try {
+          const { stdout } = await execAsync("vol C:");
+          const match = stdout.match(/ ([A-Za-z0-9_-]{8,})/i);
+          if (match) return match[1];
+        } catch {
+          return "UNKNOWN";
         }
         break;
       case "darwin":

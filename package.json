@@ -1,5 +1,7 @@
 {
   "name": "tsapp-desktop",
+  "author": "TS Shara",
+  "description": "Aplicativo TSApp Desktop para monitoramento e controle de Nobreak TS Shara.",
   "version": "3.0.0",
   "type": "module",
   "main": "dist/main/main.js",
@@ -19,8 +21,15 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis",
+      "target": ["nsis", "msi"],
       "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   },
   "dependencies": {
