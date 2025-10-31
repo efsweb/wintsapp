@@ -1,14 +1,25 @@
 // src/main/main.ts
 import { app, BrowserWindow, ipcMain } from "electron";
+import { resolveModuleURL } from "./path-resolver.js";
+
+//import { resolveModuleURL } from "../utils/path-helper.js";
 
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { SerialPort } from 'serialport';
 
-import { checkInternetConnection } from './network.js';
-import { findDevicePort, watchUSBDevices } from './usbports.js';
-import { startMonitoring, registerMainWindow, sendCommandToNB, checkMode } from './nbmonitor.js';
-import { generateHardwareId } from "../utils/hardware-id.js";
+const ntPath = resolveModuleURL('main/network.js');
+const { checkInternetConnection } = await import(ntPath);
+
+const nmPath = resolveModuleURL('main/nbmonitor.js');
+const { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode } = await import(nmPath);
+
+const upPath = resolveModuleURL('main/usbports.js');
+const { findDevicePort, watchUSBDevices } = await import(upPath);
+
+const genHDPath = resolveModuleURL('utils/hardware-id.js');
+const { generateHardwareId } = await import(genHDPath);
+const hardwareId = await generateHardwareId();
 
 import { exec } from "child_process";
 
@@ -18,7 +29,6 @@ const __dirname = path.dirname(__filename);
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-const hardwareId = await generateHardwareId();
 let getLastEvents: any;
 let closeDB: any;
 
@@ -33,8 +43,9 @@ if (process.env.NODE_ENV === "development") {
 let win: BrowserWindow | null = null;
 let devicePort: Boolean = false;
 
-function createWindow() {
+async function createWindow() {
   win = new BrowserWindow({
+    title: "TSApp Desktop",
     width: 1200,
     height: 600,
     frame: true,
@@ -72,6 +83,11 @@ function createWindow() {
     return true;
   });
 
+  ipcMain.handle('stop-monitoring', async() => {
+    await stopMonitoring();
+    return true;
+  });
+
   ipcMain.handle('nb-cmd', async(_event, cmd: string) => {
     try{
       const ok = sendCommandToNB(cmd);
@@ -92,8 +108,13 @@ function createWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    win.loadURL("http://localhost:5173/src/renderer/index.html");
-    win.webContents.openDevTools(); // abre o DevTools na janela Electron
+    try {
+      //await win.loadURL(process.env.VITE_DEV_SERVER_URL);
+      await win.loadURL("http://localhost:5173/src/renderer/index.html");
+      win.webContents.openDevTools();
+    } catch (err) {
+      console.error("Falha ao carregar URL do Vite dev:", err);
+    }
   } else {
     win.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
@@ -102,15 +123,15 @@ function createWindow() {
 function startUSBWatcher() {
   watchUSBDevices((connected: boolean) => {
     devicePort = connected;
-    win?.webContents.send('nb-status', connected); // emite evento pro renderer
+    if (win && !win.isDestroyed() && win.webContents) {
+      win?.webContents.send('nb-status', connected); // emite evento pro renderer
+    }
   });
 }
 
 app.whenReady().then(async () => {
-  const dbPath = path.resolve(__dirname, "../utils/dbconn.js");
-
-  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
-  await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
+  const dbPath = resolveModuleURL("utils/dbconn.js"); //path.resolve(__dirname, "../utils/dbconn.js");
+  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = await import(dbPath);
   
   getLastEvents = gl;
   closeDB = cdb;
@@ -170,9 +191,14 @@ app.whenReady().then(async () => {
   startUSBWatcher();
 });
 
+app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+
 app.on("window-all-closed", async () => {
-  if (closeDB) {
-    await closeDB();
+  if (closeDB) await closeDB();
+  if (typeof watchUSBDevices.stop === "function") {
+    watchUSBDevices.stop();
   }
   if (process.platform !== "darwin") app.quit();
 });
