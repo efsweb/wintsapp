@@ -25,6 +25,7 @@
       "dist/main/**/*",
       "dist/renderer/**/*",
       "node_modules/**/*",
+      "node_modules/axios/**/*",
       "!**/*.map"
     ],
     "win": {
@@ -47,6 +48,7 @@
   },
   "dependencies": {
     "@types/node-fetch": "^2.6.13",
+    "axios": "^1.13.1",
     "bootstrap": "^5.3.8",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-vite": "^4.0.1",
