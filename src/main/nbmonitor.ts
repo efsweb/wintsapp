@@ -63,7 +63,7 @@ export async function startMonitoring() {
 		if(tensaonominal == 0){
 			sendCMD('F\r');
 		}
-		//sendCMD('Q1\r\n');
+		//sendCMD('T\r\n');
 		pollingInterval = setInterval(() => {
 			sendCMD('Q1\r\n');
 		}, 2000);
@@ -93,6 +93,7 @@ export async function startMonitoring() {
 	});
 
 	monitorPort.on('error', (err) => {
+		console.log('deu ruim');
 		//se precisar monitorar futuro
 	});
 
@@ -332,9 +333,9 @@ async function sendDataToService(prdInfo: any, nbID: string) {
 }
 
 export function sendCommandToNB(cmd: string) {
-	console.log("chegou aqui");
+	//console.log("chegou aqui");
 	if (!monitorPort || !monitorPort.isOpen) {
-		//console.warn("[Serial] Porta não está aberta.");
+		console.warn("[Serial] Porta não está aberta.");
 		return false;
 	}
 

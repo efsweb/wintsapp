@@ -9,8 +9,8 @@ import { Row, Col, Table } from "react-bootstrap";
 import { IoNotifications } from 'react-icons/io5';
 import { IoNotificationsOff } from 'react-icons/io5';
 
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+//import Header from '../components/Header';
+//import Footer from '../components/Footer';
 import GaugeComponent from 'react-gauge-component';
 
 
@@ -75,7 +75,7 @@ const Dashboard: React.FC = () => {
 
 	return(
 		<>
-			<Header mnuId={1} />
+			{/*<Header mnuId={1} />*/}
 			<Row className="mb-3">
 				<Col>
 					<Row>
@@ -302,7 +302,7 @@ const Dashboard: React.FC = () => {
 			</Row>
 			<Row className="fixed-bottom">
 				<Col className="pb-2 px-4">
-					<Footer />
+					{/*<Footer />*/}
 				</Col>
 			</Row>
 		</>

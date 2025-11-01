@@ -2,6 +2,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron";
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 import path from "path";
 
 /*export default defineConfig({
@@ -51,6 +52,7 @@ export default defineConfig({
         },
       },
     }),
+    
   ],
   root: path.join(__dirname, "src/renderer"),
   base: "./",

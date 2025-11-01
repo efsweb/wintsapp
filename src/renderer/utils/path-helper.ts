@@ -11,9 +11,8 @@ export function resolveModulePath(relPath: string) {
 
   const basePath = isDev
     ? path.join(__dirname, "..") // → src/
-    : path.join(app.getAppPath(), "dist/"); // dentro do app.asar/dist/
+    : path.join(app.getAppPath(), "dist"); // dentro do app.asar/dist/
 
-  console.log(basePath);
   return path.normalize(path.join(basePath, relPath));
 }
 

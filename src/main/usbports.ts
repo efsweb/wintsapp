@@ -3,6 +3,7 @@ import { SerialPort } from 'serialport';
 import { resolveModuleURL } from "./path-resolver.js";
 
 const dbPath = resolveModuleURL('utils/dbconn.js');
+console.log(dbPath);
 const { saveEvent } = await import(dbPath);
 
 let currentPorts: string[] = [];
