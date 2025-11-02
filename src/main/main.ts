@@ -7,8 +7,8 @@ import { SerialPort } from 'serialport';
 
 import { checkInternetConnection } from './network.js';
 import { findDevicePort, watchUSBDevices } from './usbports.js';
-import { startMonitoring, registerMainWindow, sendCommandToNB, checkMode } from './nbmonitor.js';
-import { generateHardwareId } from "../utils/hardware-id.js";
+import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode } from './nbmonitor.js';
+import { generateHardwareId } from "./utils/hardware-id.js";
 
 import { exec } from "child_process";
 
@@ -34,8 +34,12 @@ let win: BrowserWindow | null = null;
 let devicePort: Boolean = false;
 
 function createWindow() {
+  console.log("DIRNAME:", __dirname);
+  console.log("INDEX PATH:", path.join(__dirname, "../preload/index.js"));
+
   win = new BrowserWindow({
-    width: 1200,
+    title: "TSApp Desktop",
+    width: 800,
     height: 600,
     frame: true,
     closable: true,
@@ -72,6 +76,11 @@ function createWindow() {
     return true;
   });
 
+  ipcMain.handle('stop-monitoring', async() => {
+    await stopMonitoring();
+    return true;
+  });
+
   ipcMain.handle('nb-cmd', async(_event, cmd: string) => {
     try{
       const ok = sendCommandToNB(cmd);
@@ -97,6 +106,10 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
+
+  win?.webContents.on("did-fail-load", (event, code, desc, url) => {
+    console.error("❌ Falha ao carregar:", code, desc, url);
+  });
 }
 
 function startUSBWatcher() {
@@ -107,7 +120,7 @@ function startUSBWatcher() {
 }
 
 app.whenReady().then(async () => {
-  const dbPath = path.resolve(__dirname, "../utils/dbconn.js");
+  const dbPath = path.resolve(__dirname, "./utils/dbconn.js");
 
   const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
@@ -165,6 +178,7 @@ app.whenReady().then(async () => {
     });
   });
 
+  win?.webContents.openDevTools({ mode: 'detach' });
   //console.log("Hardware ID:", hardwareId);
   devicePort = await findDevicePort();
   startUSBWatcher();

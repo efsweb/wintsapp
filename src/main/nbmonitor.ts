@@ -5,7 +5,7 @@ import { ReadlineParser } from '@serialport/parser-readline';
 import axios from 'axios';
 import moment from 'moment';
 import { BrowserWindow } from 'electron';
-import { saveEvent } from "../utils/dbconn.js";
+import { saveEvent } from "./utils/dbconn.js";
 import { getCurrentDevicePort } from './usbports.js';
 
 let nbID: string | null = null;

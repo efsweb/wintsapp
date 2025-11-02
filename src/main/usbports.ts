@@ -1,6 +1,6 @@
 // src/main/usbports.ts
 import { SerialPort } from 'serialport';
-import { saveEvent } from "../utils/dbconn.js";
+import { saveEvent } from "./utils/dbconn.js";
 
 let currentPorts: string[] = [];
 let onDeviceDisconnected: (() => void) | null = null;
