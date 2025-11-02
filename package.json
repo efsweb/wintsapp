@@ -10,8 +10,13 @@
     "dev:renderer": "vite",
     "dev:main": "cross-env NODE_ENV=development tsc-watch --project tsconfig.main.json --onSuccess \"npx electron ./dist/main/main.js\"",
     "dev": "concurrently \"npm:dev:renderer\" \"npm:dev:main\"",
-    "build": "vite build && tsc -p tsconfig.json",
-    "dist": "npm run build && electron-builder"
+    
+    "build:main": "tsc -p tsconfig.json",
+    "build:renderer": "vite build",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "build": "npm run build:renderer && npm run build:main && npm run build:preload",
+
+    "dist": "npm run build:renderer && npm run build:main && npm run build:preload && electron-builder"
   },
   "build": {
     "appId": "br.com.tsappfordesktop",
@@ -25,8 +30,8 @@
     "files": [
       "dist/main/**/*",
       "dist/renderer/**/*",
-      "node_modules/**/*",
-      "!**/*.map"
+      "dist/preload/**/*",
+      "package.json"
     ],
     "win": {
       "target": [

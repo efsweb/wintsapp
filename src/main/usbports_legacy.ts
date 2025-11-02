@@ -1,8 +1,13 @@
 // src/main/usbports.ts
 import { SerialPort } from 'serialport';
+import { resolveModuleURL } from "./path-resolver.js";
+
 import { saveEvent } from "./utils/dbconn.js";
 
-let currentPorts: string[] = [];
+/*const dbPath = resolveModuleURL('utils/dbconn.js');
+console.log(dbPath);
+const { saveEvent } = await import(dbPath);*/
+
 let onDeviceDisconnected: (() => void) | null = null;
 let detectedPortPath: string | null = null;
 
@@ -127,4 +132,7 @@ export function watchUSBDevices(onChange: (connected: boolean) => void) {
         }
     };
 }
+
+
+
 

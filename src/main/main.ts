@@ -1,25 +1,14 @@
 // src/main/main.ts
 import { app, BrowserWindow, ipcMain } from "electron";
-import { resolveModuleURL } from "./path-resolver.js";
-
-//import { resolveModuleURL } from "../utils/path-helper.js";
 
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { SerialPort } from 'serialport';
 
-const ntPath = resolveModuleURL('main/network.js');
-const { checkInternetConnection } = await import(ntPath);
-
-const nmPath = resolveModuleURL('main/nbmonitor.js');
-const { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode } = await import(nmPath);
-
-const upPath = resolveModuleURL('main/usbports.js');
-const { findDevicePort, watchUSBDevices } = await import(upPath);
-
-const genHDPath = resolveModuleURL('utils/hardware-id.js');
-const { generateHardwareId } = await import(genHDPath);
-const hardwareId = await generateHardwareId();
+import { checkInternetConnection } from './network.js';
+import { findDevicePort, watchUSBDevices } from './usbports.js';
+import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode } from './nbmonitor.js';
+import { generateHardwareId } from "./utils/hardware-id.js";
 
 import { exec } from "child_process";
 
@@ -29,6 +18,7 @@ const __dirname = path.dirname(__filename);
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
+const hardwareId = await generateHardwareId();
 let getLastEvents: any;
 let closeDB: any;
 
@@ -44,9 +34,10 @@ let win: BrowserWindow | null = null;
 let devicePort: Boolean = false;
 
 async function createWindow() {
+  
   win = new BrowserWindow({
     title: "TSApp Desktop",
-    width: 1200,
+    width: 800,
     height: 600,
     frame: true,
     closable: true,
@@ -108,20 +99,19 @@ async function createWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    try {
-      //await win.loadURL(process.env.VITE_DEV_SERVER_URL);
-      await win.loadURL("http://localhost:5173/src/renderer/index.html");
-      win.webContents.openDevTools();
-    } catch (err) {
-      console.error("Falha ao carregar URL do Vite dev:", err);
-    }
+    await win.loadURL("http://localhost:5173/src/renderer/index.html");
+    win.webContents.openDevTools(); // abre o DevTools na janela Electron
   } else {
     win.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
-}
 
+  win?.webContents.on("did-fail-load", (event, code, desc, url) => {
+    console.error("❌ Falha ao carregar:", code, desc, url);
+  });
+}
+let usbWatcher: { stop: () => void } | null = null;
 function startUSBWatcher() {
-  watchUSBDevices((connected: boolean) => {
+  usbWatcher = watchUSBDevices((connected: boolean) => {
     devicePort = connected;
     if (win && !win.isDestroyed() && win.webContents) {
       win?.webContents.send('nb-status', connected); // emite evento pro renderer
@@ -130,8 +120,10 @@ function startUSBWatcher() {
 }
 
 app.whenReady().then(async () => {
-  const dbPath = resolveModuleURL("utils/dbconn.js"); //path.resolve(__dirname, "../utils/dbconn.js");
-  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = await import(dbPath);
+  const dbPath = path.resolve(__dirname, "./utils/dbconn.js");
+
+  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
+  await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
   
   getLastEvents = gl;
   closeDB = cdb;
@@ -186,19 +178,16 @@ app.whenReady().then(async () => {
     });
   });
 
+  win?.webContents.openDevTools({ mode: 'detach' });
   //console.log("Hardware ID:", hardwareId);
   devicePort = await findDevicePort();
   startUSBWatcher();
 });
 
-app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-
 app.on("window-all-closed", async () => {
   if (closeDB) await closeDB();
-  if (typeof watchUSBDevices.stop === "function") {
-    watchUSBDevices.stop();
+  if (usbWatcher && typeof usbWatcher.stop === "function") {
+    usbWatcher.stop();
   }
   if (process.platform !== "darwin") app.quit();
 });
@@ -208,7 +197,6 @@ app.on("activate", () => {
 });
 
 //export const NBID = hardwareId;
-
 
 
 

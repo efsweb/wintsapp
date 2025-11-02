@@ -8,6 +8,8 @@ import { IoFlashSharp, IoBatteryFullOutline } from 'react-icons/io5';
 import { IoCloud, IoCloudDone, IoCloudOfflineOutline } from 'react-icons/io5';
 import { IoUnlinkOutline, IoLinkOutline, IoWifiOutline } from 'react-icons/io5';
 
+import logoWhite from "../assets/logo-white.png";
+
 interface HeaderProps {
 	mnuId: number;
 }
@@ -88,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({mnuId}) => {
 				<Col className="ps-3 pe-3 pb-3 pt-2">
 					<Row>
 						<Col md={2}>
-							<Image fluid src="/assets/logo-white.png" />
+							<Image fluid src={logoWhite} />
 						</Col>
 						<Col md={{span:8, offset:2}} className="mt-2">
 							<Row className="align-items-center text-light">

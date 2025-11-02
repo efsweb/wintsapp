@@ -6,14 +6,8 @@ import { resolveModuleURL } from "./path-resolver.js";
 import axios from 'axios';
 import moment from 'moment';
 import { BrowserWindow } from 'electron';
+import { saveEvent } from "./utils/dbconn.js";
 
-const dbPath = resolveModuleURL('utils/dbconn.js');
-const { saveEvent } = await import(dbPath);
-
-//const ubPath = resolveModuleURL('usbports.js');
-//const { getCurrentDevicePort } = await import(ubPath);
-
-//import { saveEvent } from "../utils/dbconn.js";
 import { getCurrentDevicePort } from './usbports.js';
 
 let nbID: string | null = null;
