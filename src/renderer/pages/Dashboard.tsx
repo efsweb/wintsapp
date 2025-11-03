@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
 		init();
 		// Cleanup do listener quando o componente desmontar
 		return () => {
-			window.electronAPI?.stopMonitoring?.(); // safe call
+			//window.electronAPI?.stopMonitoring?.(); // safe call
 			if (unsubscribe) unsubscribe();
 		};
 	}, []);

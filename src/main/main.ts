@@ -9,6 +9,7 @@ import { checkInternetConnection } from './network.js';
 import { findDevicePort, watchUSBDevices } from './usbports.js';
 import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode } from './nbmonitor.js';
 import { generateHardwareId } from "./utils/hardware-id.js";
+import { setAutoLaunch } from './utils/autolaunch.js';
 
 import { exec } from "child_process";
 
@@ -80,6 +81,7 @@ async function createWindow() {
   });
 
   ipcMain.handle('nb-cmd', async(_event, cmd: string) => {
+    console.log('comando chamado');
     try{
       const ok = sendCommandToNB(cmd);
       return true;
@@ -109,6 +111,7 @@ async function createWindow() {
     console.error("❌ Falha ao carregar:", code, desc, url);
   });
 }
+
 let usbWatcher: { stop: () => void } | null = null;
 function startUSBWatcher() {
   usbWatcher = watchUSBDevices((connected: boolean) => {
@@ -124,7 +127,10 @@ app.whenReady().then(async () => {
 
   const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
-  
+
+  console.log('Login Item:', app.getLoginItemSettings());
+  setAutoLaunch();
+
   getLastEvents = gl;
   closeDB = cdb;
 

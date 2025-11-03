@@ -335,6 +335,9 @@ export function sendCommandToNB(cmd: string) {
 
 	console.log(`[Serial] Enviando comando manual: ${cmd}`);
 	switch(cmd){
+		case "A\r":
+			
+			break;
 		case "T\r":
 			if (lastNBData) {
 				saveEvent({

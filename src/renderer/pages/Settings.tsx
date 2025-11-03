@@ -55,7 +55,7 @@ const Settings: React.FC = () => {
 	};
 
 	useEffect(() => {
-		window.electronAPI?.stopMonitoring?.();
+		//window.electronAPI?.stopMonitoring?.();
 		async function loadConfig(){
 			//console.log('no load');
 			let ins = await window.electronAPI.db.getConfig();
@@ -97,7 +97,7 @@ const Settings: React.FC = () => {
 					astart: !prev.astart ? 1 : 0
 				}));
 				window.electronAPI.db.setConfig({id_nb: '1', astart: as});
-				//window.electronAPI.sendNBCommand("Q\r");
+				window.electronAPI.sendNBCommand("A\r");
 				break;
 			case 3:
 				let so = cfg.psd ? 0 : 1;
