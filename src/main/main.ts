@@ -1,5 +1,5 @@
 // src/main/main.ts
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from "electron";
 
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
@@ -31,8 +31,10 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
+let isQuiting = false;
 let win: BrowserWindow | null = null;
 let devicePort: Boolean = false;
+let tray: Tray | null = null;
 
 async function createWindow() {
   
@@ -44,6 +46,7 @@ async function createWindow() {
     closable: true,
     resizable: false,
     transparent: false,
+    show: false, // <-- Inicia oculto quando false
     center: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'), // Adjust path as needed
@@ -128,14 +131,12 @@ app.whenReady().then(async () => {
   const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
 
-  console.log('Login Item:', app.getLoginItemSettings());
-  await setAutoLaunch();
-  console.log(app.getLoginItemSettings());
-
   getLastEvents = gl;
   closeDB = cdb;
 
   createWindow();
+  createTray();
+  win?.setSkipTaskbar(true);
 
   // Registra IPCs do banco depois do import
   ipcMain.handle("db:getLastEvents", async (_, limit = 20) => {
@@ -160,6 +161,10 @@ app.whenReady().then(async () => {
 
   ipcMain.handle("db:closeDB", async () => {
     return cdb();
+  });
+
+  ipcMain.handle("autoLaunch", async (event, enable) => {
+    await setAutoLaunch(enable);
   });
 
   ipcMain.handle("system:shutdown", async () => {
@@ -189,6 +194,13 @@ app.whenReady().then(async () => {
   //console.log("Hardware ID:", hardwareId);
   devicePort = await findDevicePort();
   startUSBWatcher();
+
+  win?.on("close", (event) => {
+    if (!isQuiting) {
+      event.preventDefault();
+      win?.hide();
+    }
+  });
 });
 
 app.on("window-all-closed", async () => {
@@ -202,6 +214,51 @@ app.on("window-all-closed", async () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+function createTray() {
+  const iconPath = process.platform === 'darwin'
+    ? path.join(process.cwd(), 'build', 'icon-mac.png')
+    : process.platform === 'win32'
+    ? path.join(process.cwd(), 'build', 'icon-win.png')
+    : path.join(process.cwd(), 'build', 'icon-linux.png');
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  
+  tray = new Tray(trayIcon);
+  tray.setToolTip("TSApp Desktop");
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "Mostrar janela",
+      click: () => {
+        if (win) {
+          win.show();
+          win.focus();
+        }
+      },
+    },
+    {
+      label: "Sair",
+      click: () => {
+        isQuiting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  // clique simples alterna mostrar/ocultar
+  tray.on("click", () => {
+    if (!win) return;
+    if (win.isVisible()) {
+      win.hide();
+    } else {
+      win.show();
+      win.focus();
+    }
+  });
+}
+
 
 //export const NBID = hardwareId;
 

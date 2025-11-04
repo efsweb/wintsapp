@@ -6,6 +6,7 @@ declare global {
     electronAPI: {
       onNBStatus: (callback: (status: boolean) => void) => () => void;
       onNBData: (callback: (data: any) => void) => void;
+      autoLaunch: (enable: boolean) => Promise<void>;
       sendNBCommand: (cmd: string) => Promise<any>;
 
       getInternetStatus: () => Promise<boolean>;

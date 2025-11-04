@@ -91,13 +91,11 @@ const Settings: React.FC = () => {
 				//console.log('fecho');
 				break;
 			case 2:
-				let as = cfg.astart ? 0 : 1;
-				setCfg(prev => ({
-					...prev,
-					astart: !prev.astart ? 1 : 0
-				}));
-				window.electronAPI.db.setConfig({id_nb: '1', astart: as});
-				window.electronAPI.sendNBCommand("A\r");
+				let ns = cfg.astart ? 0 : 1;
+				setCfg(prev => ({ ...prev, astart: ns }));
+				window.electronAPI.db.setConfig({id_nb: '1', astart: ns});
+				window.electronAPI.autoLaunch(!!ns);
+				//window.electronAPI.autoLaunch.set(!!ns);
 				break;
 			case 3:
 				let so = cfg.psd ? 0 : 1;

@@ -3,21 +3,26 @@ import { app } from 'electron';
 import path from 'path';
 
 export function setAutoLaunch(enable = true) {
-  const exePath = process.execPath;
-  const appName = app.getName();
+  if (!app.isPackaged) {
+    console.log("⚠️ Ignorando autoLaunch no modo dev (macOS bloqueia).");
+    return;
+  }
 
-  console.log(exePath);
-  console.log(appName);
+  //const exePath = process.execPath;
+  //const appName = app.getName();
+
+  const exePath = app.getPath('exe');
+  const appName = app.getName();
 
   switch (process.platform) {
     case 'win32':
     case 'darwin':
-      console.log('ehre');
+      //console.log('ehre');
       // No Windows e macOS, o Electron já fornece suporte nativo
       app.setLoginItemSettings({
         openAtLogin: enable,
         path: exePath,
-        args: []
+        args: [],
       });
       break;
 

@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onNBData: (callback: (data: any) => void) => ipcRenderer.on('nb-data', (event, data) => callback(data)),
   
   sendNBCommand: (cmd: string) => ipcRenderer.invoke("nb-cmd", cmd),
+  autoLaunch: (enable: any) => ipcRenderer.invoke('autoLaunch', enable),
+
   getInternetStatus: () => ipcRenderer.invoke('get-internet-status'),
   startMonitoring: () => ipcRenderer.invoke('start-monitoring'),
   stopMonitoring: () => ipcRenderer.invoke('stop-monitoring'),
