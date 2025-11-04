@@ -6,9 +6,13 @@ export function setAutoLaunch(enable = true) {
   const exePath = process.execPath;
   const appName = app.getName();
 
+  //console.log(exePath);
+  //console.log(appName);
+
   switch (process.platform) {
     case 'win32':
     case 'darwin':
+      //console.log('ehre');
       // No Windows e macOS, o Electron já fornece suporte nativo
       app.setLoginItemSettings({
         openAtLogin: enable,

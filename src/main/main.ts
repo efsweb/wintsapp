@@ -128,8 +128,9 @@ app.whenReady().then(async () => {
   const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
 
-  console.log('Login Item:', app.getLoginItemSettings());
-  setAutoLaunch();
+  //console.log('Login Item:', app.getLoginItemSettings());
+  await setAutoLaunch();
+  //console.log(app.getLoginItemSettings());
 
   getLastEvents = gl;
   closeDB = cdb;

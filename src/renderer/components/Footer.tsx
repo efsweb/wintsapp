@@ -27,10 +27,10 @@ const Footer: React.FC = () => {
 				<Col md={12} className="text-light ps-3">
 					<Row>
 						<Col md={8}>
-							<small>sistema: {plat}</small>
+							<small className="text-lowercase">sistema: {plat}</small>
 						</Col>
 						<Col md={4} className="text-end">
-							<small>versão 3.0.0</small>
+							<small className="text-lowercase">versão 3.0.0</small>
 						</Col>
 					</Row>
 				</Col>
