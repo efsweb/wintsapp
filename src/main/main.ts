@@ -232,11 +232,16 @@ app.on("activate", () => {
 });
 
 function createTray() {
-  const iconPath = process.platform === 'darwin'
-    ? path.join(process.cwd(), 'build', 'icon-mac.png')
+  const iconFile = process.platform === 'darwin'
+    ? 'icon-mac.png'
     : process.platform === 'win32'
-    ? path.join(process.cwd(), 'build', 'icon-win.png')
-    : path.join(process.cwd(), 'build', 'icon-linux.png');
+    ? 'icon-win.png'
+    : 'icon-linux.png';
+
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, iconFile)
+    : path.join(process.cwd(), 'build', iconFile); 
+
   const trayIcon = nativeImage.createFromPath(iconPath);
   
   tray = new Tray(trayIcon);
