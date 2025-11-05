@@ -1,4 +1,6 @@
 // src/main/main.ts
+
+//** Imports **//
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification } from "electron";
 
 import path from "path";
@@ -7,21 +9,30 @@ import { SerialPort } from 'serialport';
 
 import { checkInternetConnection } from './network.js';
 import { findDevicePort, watchUSBDevices } from './usbports.js';
-import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode } from './nbmonitor.js';
+import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode, setNotificationCallback } from './nbmonitor.js';
+
 import { generateHardwareId } from "./utils/hardware-id.js";
 import { setAutoLaunch } from './utils/autolaunch.js';
 
 import { exec } from "child_process";
+import { createRequire } from "module";
+//** Fim Imports **//
 
+//** Variaveis **//
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-
 const hardwareId = await generateHardwareId();
-let getLastEvents: any;
+
 let closeDB: any;
+let isQuiting = false;
+let getLastEvents: any;
+let tray: Tray | null = null;
+let devicePort: Boolean = false;
+let win: BrowserWindow | null = null;
+let onNBEvent: ((title: string, body: string) => void) | null = null;
+
 
 if (process.env.NODE_ENV === "development") {
   const electronReload = require("electron-reload");
@@ -31,12 +42,13 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
-let isQuiting = false;
-let win: BrowserWindow | null = null;
-let devicePort: Boolean = false;
-let tray: Tray | null = null;
+//** Fim Variaveis **//
 
-function showNotification(title: string, body: string) {
+export function registerNBNotificationCallback(callback: (title: string, body: string) => void) {
+  onNBEvent = callback;
+}
+
+export function showNotification(title: string, body: string) {
   new Notification({ title, body }).show();
 }
 
@@ -142,10 +154,7 @@ app.whenReady().then(async () => {
   const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
   
-  setTimeout(() => {
-    new Notification({ title: 'Teste', body: 'Notificação de teste 🎉' }).show();
-  }, 2000);
-
+  setNotificationCallback((title: string, body: string) => showNotification(title, body));
 
   getLastEvents = gl;
   closeDB = cdb;

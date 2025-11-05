@@ -10,6 +10,7 @@ import { saveEvent } from "./utils/dbconn.js";
 
 import { getCurrentDevicePort } from './usbports.js';
 
+let notifyCallback: ((title: string, body: string) => void) | null = null;
 let nbID: string | null = null;
 let tensaonominal: Number | 0 = 0;
 let monitorPort: SerialPort | null = null;
@@ -26,6 +27,10 @@ let lastNBData: {
 	temp: number;
 	status: string;
 } | null = null;
+
+export function setNotificationCallback(callback: any) {
+	notifyCallback = callback;
+}
 
 export function registerMainWindow(win: BrowserWindow, id: string) {
     mainWindow = win;
@@ -150,6 +155,9 @@ function parseMsg(msg: string, cmd: string){
 						console.log('Enviado');
 						sendCommandToNB("S1\r");
 					}
+					if (notifyCallback) {
+						notifyCallback('NB Status', falha);
+					}
 					saveEvent({
 						event: falha,
 						inputVoltage: toNum(input),
@@ -166,6 +174,9 @@ function parseMsg(msg: string, cmd: string){
 				 	if(parseInt(sts[1]) == 1){
 				 		baixa = 'Bateria Baixa';
 				 	}
+				 	if (notifyCallback) {
+						notifyCallback('NB Status', baixa);
+					}
 					saveEvent({
 						event: baixa,
 						inputVoltage: toNum(input),
@@ -336,7 +347,7 @@ export function sendCommandToNB(cmd: string) {
 	console.log(`[Serial] Enviando comando manual: ${cmd}`);
 	switch(cmd){
 		case "A\r":
-			
+
 			break;
 		case "T\r":
 			if (lastNBData) {

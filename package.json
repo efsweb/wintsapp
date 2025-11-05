@@ -48,7 +48,7 @@
       "createStartMenuShortcut": true
     },
     "mac": {
-      
+      "identity": null
     }
   },
   "dependencies": {
