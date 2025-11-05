@@ -32,7 +32,7 @@ let lastNBData: {
 
 //** Controla o desligamento do sistema operacional **//
 //WINDOWS
-const voidPtr = ref.refType(ref.types.void);
+/*const voidPtr = ref.refType(ref.types.void);
 const systemShutdownEvent = ffi.Library('user32.dll', {
   'SetConsoleCtrlHandler': ['bool', [voidPtr, 'bool']],
   'GenerateConsoleCtrlEvent': ['bool', ['int', 'int']]
@@ -45,7 +45,7 @@ const shutdownHandler = ffi.Callback('bool', [], () => {
 });
 
 systemShutdownEvent.SetConsoleCtrlHandler(shutdownHandler, true);
-
+*/
 //MAC/LINUX
 process.on('SIGTERM', () => {
   console.log('Sistema está sendo desligado ou reiniciado...');
