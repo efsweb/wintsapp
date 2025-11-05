@@ -4,9 +4,11 @@ import { ReadlineParser } from '@serialport/parser-readline';
 import { resolveModuleURL } from "./path-resolver.js";
 
 import axios from 'axios';
+import ffi from 'ffi-napi';
+import ref from 'ref-napi';
 import moment from 'moment';
-import { BrowserWindow } from 'electron';
-import { saveEvent } from "./utils/dbconn.js";
+import { app, BrowserWindow } from 'electron';
+import { saveEvent, getConfig } from "./utils/dbconn.js";
 
 import { getCurrentDevicePort } from './usbports.js';
 
@@ -27,6 +29,35 @@ let lastNBData: {
 	temp: number;
 	status: string;
 } | null = null;
+
+//** Controla o desligamento do sistema operacional **//
+//WINDOWS
+const voidPtr = ref.refType(ref.types.void);
+const systemShutdownEvent = ffi.Library('user32.dll', {
+  'SetConsoleCtrlHandler': ['bool', [voidPtr, 'bool']],
+  'GenerateConsoleCtrlEvent': ['bool', ['int', 'int']]
+});
+
+const shutdownHandler = ffi.Callback('bool', [], () => {
+  console.log('O sistema está prestes a desligar ou reiniciar!');
+  sendCommandToNB("S01\r");  // Enviar comando para o NB
+  return true;  // Permitir que o sistema continue com o desligamento
+});
+
+systemShutdownEvent.SetConsoleCtrlHandler(shutdownHandler, true);
+
+//MAC/LINUX
+process.on('SIGTERM', () => {
+  console.log('Sistema está sendo desligado ou reiniciado...');
+  sendCommandToNB("S01\r");
+});
+process.on('SIGINT', () => {
+  console.log('Interrupção manual (Ctrl+C) detectada...');
+  sendCommandToNB("S01\r");
+  app.quit();
+});
+//** Controla o desligamento do operacional **//
+
 
 export function setNotificationCallback(callback: any) {
 	notifyCallback = callback;
@@ -429,7 +460,7 @@ export function sendCommandToNB(cmd: string) {
 			console.log('AAA ' + a);
 			if(a == 'S'){
 				console.log('Enviando desligamento');
-				cmd = "S001\r";
+				cmd = "S01\r";
 			}else{
 				cmd = cmd.padStart(2, "0");
 				if (lastNBData) {
@@ -470,6 +501,3 @@ export function checkMode(){
 	}
 	return true;
 }
-
-
-

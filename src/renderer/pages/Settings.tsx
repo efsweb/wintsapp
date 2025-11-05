@@ -103,6 +103,10 @@ const Settings: React.FC = () => {
 					...prev,
 					psd: !prev.psd ? 1 : 0
 				}));
+				setCfg(prev => ({
+					...prev,
+					ups: !prev.ups ? 1 : 0
+				}));
 				window.electronAPI.db.setConfig({id_nb: '1', psd: so});
 				//window.electronAPI.sendNBCommand("Q\r");
 				break;
@@ -209,6 +213,7 @@ const Settings: React.FC = () => {
 											placeholder="Desligar sem rede (min)"
 											aria-describedby="basic-addon2"
 											type="number"
+											size="sm"
 											defaultValue={(cfg.shutdown_failure != 0) ? cfg.shutdown_failure : ''}
 											onBlur={(e) => saveThis(e.target.value, 'offnet')}
 										></Form.Control>
@@ -225,6 +230,7 @@ const Settings: React.FC = () => {
 											placeholder="Bateria baixa desligar (min)"
 											aria-describedby="basic-addon2"
 											type="number"
+											size="sm"
 											defaultValue={(cfg.sl != 0) ? cfg.sl : ''}
 											onBlur={(e) => saveThis(e.target.value, 'lowb')}
 										></Form.Control>
@@ -237,13 +243,15 @@ const Settings: React.FC = () => {
 							<Row>
 								<Col>
 									<InputGroup>
-										<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-onoff">Força o desligamento do NB, após o tempo indicado.</Tooltip>}>
+										<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-onoff">Desliga o NB X min após desligar o sistema.</Tooltip>}>
 											<InputGroup.Text id="turnoffups"><IoAlarmOutline /></InputGroup.Text>
 										</OverlayTrigger>
 										<Form.Control
 											placeholder="Desligar NB (min) / max 10min"
 											aria-describedby="basic-addon2"
 											type="number"
+											size="sm"
+											disabled={ cfg.ups === 0 }
 											defaultValue={(cfg.ups != 0) ? cfg.ups : ''}
 											onBlur={(e) => saveThis(e.target.value, 'onoff')}
 										></Form.Control>

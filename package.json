@@ -10,12 +10,10 @@
     "dev:renderer": "vite",
     "dev:main": "cross-env NODE_ENV=development tsc-watch --project tsconfig.main.json --onSuccess \"npx electron ./dist/main/main.js\"",
     "dev": "concurrently \"npm:dev:renderer\" \"npm:dev:main\"",
-    
     "build:main": "tsc -p tsconfig.json",
     "build:renderer": "vite build",
     "build:preload": "tsc -p tsconfig.preload.json",
     "build": "npm run build:renderer && npm run build:main && npm run build:preload",
-
     "dist": "npm run build:renderer && npm run build:main && npm run build:preload && electron-builder"
   },
   "build": {
@@ -32,6 +30,16 @@
       "dist/renderer/**/*",
       "dist/preload/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/",
+        "to": ".",
+        "filter": [
+          "**/*.png",
+          "**/*.ico"
+        ]
+      }
     ],
     "win": {
       "target": [
@@ -52,6 +60,7 @@
     }
   },
   "dependencies": {
+    "@paymoapp/electron-shutdown-handler": "^1.1.2",
     "@types/node-fetch": "^2.6.13",
     "axios": "^1.13.1",
     "bootstrap": "^5.3.8",

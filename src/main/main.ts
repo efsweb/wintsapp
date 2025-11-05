@@ -1,6 +1,7 @@
 // src/main/main.ts
 
 //** Imports **//
+import ElectronShutdownHandler from '@paymoapp/electron-shutdown-handler';
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification } from "electron";
 
 import path from "path";
@@ -220,6 +221,17 @@ app.whenReady().then(async () => {
   devicePort = await findDevicePort();
   startUSBWatcher();
 
+  ElectronShutdownHandler.setWindowHandle(win.getNativeWindowHandle());
+  ElectronShutdownHandler.blockShutdown('Please wait for some data to be saved');
+
+  ElectronShutdownHandler.on('shutdown', () => {
+    showNotification('Teste', 'desligando o sistema');
+    console.log('Shutting down!');
+    ElectronShutdownHandler.releaseShutdown();
+    win.webContents.send('shutdown');
+    app.quit();
+  });
+
   win?.on("close", (event) => {
     if (!isQuiting) {
       event.preventDefault();
@@ -248,7 +260,7 @@ function createTray() {
     : 'icon-linux.png';
 
   const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, iconFile)
+    ? path.join(process.resourcesPath, 'public', iconFile)
     : path.join(process.cwd(), 'build', iconFile); 
 
   const trayIcon = nativeImage.createFromPath(iconPath);
