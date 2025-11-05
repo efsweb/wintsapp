@@ -4,8 +4,8 @@ import { ReadlineParser } from '@serialport/parser-readline';
 import { resolveModuleURL } from "./path-resolver.js";
 
 import axios from 'axios';
-import ffi from 'ffi-napi';
-import ref from 'ref-napi';
+//import ffi from 'ffi-napi';
+//import ref from 'ref-napi';
 import moment from 'moment';
 import { app, BrowserWindow } from 'electron';
 import { saveEvent, getConfig } from "./utils/dbconn.js";

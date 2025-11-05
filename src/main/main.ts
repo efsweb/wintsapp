@@ -221,14 +221,14 @@ app.whenReady().then(async () => {
   devicePort = await findDevicePort();
   startUSBWatcher();
 
-  ElectronShutdownHandler.setWindowHandle(win.getNativeWindowHandle());
+  ElectronShutdownHandler.setWindowHandle(win?.getNativeWindowHandle());
   ElectronShutdownHandler.blockShutdown('Please wait for some data to be saved');
 
   ElectronShutdownHandler.on('shutdown', () => {
     showNotification('Teste', 'desligando o sistema');
     console.log('Shutting down!');
     ElectronShutdownHandler.releaseShutdown();
-    win.webContents.send('shutdown');
+    win?.webContents.send('shutdown');
     app.quit();
   });
 
