@@ -1,5 +1,5 @@
 // src/main/main.ts
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from "electron";
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification } from "electron";
 
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
@@ -35,6 +35,10 @@ let isQuiting = false;
 let win: BrowserWindow | null = null;
 let devicePort: Boolean = false;
 let tray: Tray | null = null;
+
+function showNotification(title: string, body: string) {
+  new Notification({ title, body }).show();
+}
 
 async function createWindow() {
   
@@ -120,16 +124,28 @@ function startUSBWatcher() {
   usbWatcher = watchUSBDevices((connected: boolean) => {
     devicePort = connected;
     if (win && !win.isDestroyed() && win.webContents) {
+      console.log('aquiiiii');
+      showNotification(
+        'NB Status',
+        connected ? 'NB Conectado' : 'NB Disconectado'
+      );
       win?.webContents.send('nb-status', connected); // emite evento pro renderer
     }
+
   });
 }
 
 app.whenReady().then(async () => {
+  app.setAppUserModelId('br.com.tsappfordesktop');
   const dbPath = path.resolve(__dirname, "./utils/dbconn.js");
 
   const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
+  
+  setTimeout(() => {
+    new Notification({ title: 'Teste', body: 'Notificação de teste 🎉' }).show();
+  }, 2000);
+
 
   getLastEvents = gl;
   closeDB = cdb;
