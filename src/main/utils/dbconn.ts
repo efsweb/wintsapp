@@ -41,7 +41,8 @@ export async function initDB() {
 		ups_down_after INTEGER,
 		after_backup INTEGER,
 		beep INTEGER,
-		auto_start INTEGER)
+		auto_start INTEGER,
+		email TEXT)
 	`);
 
 	return db;
@@ -79,7 +80,8 @@ export async function getLastEvents(limit = 20){
 
 export async function cleanDatabase(){
 	const cnn = await initDB();
-	await cnn.run(`DELETE FROM cfg`);
+	//await cnn.run(`DELETE FROM cfg`);
+	//await cnn.run(`DROP TABLE cfg`);
 	return await cnn.run(`DELETE FROM history`);
 }
 
@@ -90,13 +92,15 @@ export async function closeDB() {
 	}
 }
 
-export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; ups?: number; psd?: number; afb?: number; beep?: number; astart?: number}){
+export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; ups?: number; psd?: number; afb?: number; beep?: number; astart?: number, email?: Text}){
 	const cnn = await initDB();
 	let chk = await getConfig();
+	console.log(chk);
 	if(!chk || chk.length === 0){
+		console.log('rodando insert');
 		await cnn.run(`
-			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start)
-			values (?, ?, ?, ?, ?, ?, ?, ?)`,
+			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start, email)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				'1',
 				lnp.sf ?? 0,
@@ -105,14 +109,16 @@ export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; u
 				lnp.psd ?? 0,
 				lnp.afb ?? 0,
 				lnp.beep ?? 0,
-				lnp.astart ?? 0
+				lnp.astart ?? 0,
+				lnp.email ?? ''
 		]);
 	}else{
+		console.log('rodando update');
 		await cnn.run(
 			`
 			UPDATE cfg 
 			SET 
-				id_nb = ?, shutdown_failure = ?, shutdown_low = ?, ups_shutdown = ?, ups_down_after = ?, after_backup = ?, beep = ?, auto_start = ?
+				id_nb = ?, shutdown_failure = ?, shutdown_low = ?, ups_shutdown = ?, ups_down_after = ?, after_backup = ?, beep = ?, auto_start = ?, email = ?
 			WHERE id = ?;
 			`,
 			[
@@ -124,6 +130,7 @@ export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; u
 				lnp.afb ?? chk[0].after_backup,
 				lnp.beep ?? chk[0].beep,
 				lnp.astart ?? chk[0].auto_start,
+				lnp.email ?? chk[0].email,
 				chk[0].id // id atual no banco
 			]
 		);
@@ -137,9 +144,10 @@ export async function getConfig(){
 	);
 
 	if(sl.length <= 0){
+		console.log('veio criar primeiro');
 		await cnn.run(`
-			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start)
-			values (?, ?, ?, ?, ?, ?, ?, ?)`,['1',0,0,0,0,0,0,0]);
+			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start, email)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,['1',0,0,0,0,0,0,0,'']);
 		sl = await cnn.all(
 			`SELECT * FROM cfg WHERE id_nb = '1'`
 		);

@@ -1,6 +1,6 @@
 //settings.tsx
 import React, {useEffect, useState} from 'react';
-import { IoAlarmOutline } from 'react-icons/io5';
+import { IoAlarmOutline, IoMail } from 'react-icons/io5';
 import { Row, Col, Button, Card, InputGroup, Form, Toast, ToastContainer, Tooltip, OverlayTrigger } from "react-bootstrap";
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -14,6 +14,7 @@ interface conf {
 	afb: number, //hiberna ou desliga o nb após o tempo de back-up
 	beep: number, //liga ou desliga o beep do NB
 	astart: number, //inicia automaticamente com o S.O
+	email: Text, //emails de disparo
 }
 
 const Settings: React.FC = () => {
@@ -26,11 +27,12 @@ const Settings: React.FC = () => {
 		after_backup: number;
 		beep: number;
 		auto_start: number;
+		email: text;
 	} | null = null;
 
 	const [tmin, setTmin] = useState<number>(0);
 	const [show, setShow] = useState(false);
-	const [cfg, setCfg] = useState<conf>({id_nb: '', shutdown_failure: 0, sl: 0, ups: 0, psd: 0, afb: 0, beep: 0, astart: 0});
+	const [cfg, setCfg] = useState<conf>({id_nb: '', shutdown_failure: 0, sl: 0, ups: 0, psd: 0, afb: 0, beep: 0, astart: 0, email: ''});
 	
 	const sendTest = (kind: string) => {
 		switch(kind){
@@ -41,10 +43,10 @@ const Settings: React.FC = () => {
 				window.electronAPI.sendNBCommand("TL\r")
 				break;
 			case 'c':
-				let n = '';
+				let n = 'T';
 				let v = document.getElementById('customTestInput') as HTMLInputElement | null;
 				if(v){
-					n = v.value;
+					n = n + v.value;
 				}
 				window.electronAPI.sendNBCommand(n);
 				break;
@@ -68,10 +70,11 @@ const Settings: React.FC = () => {
 					psd: ins[0].ups_down_after,
 					afb: ins[0].after_backup,
 					beep: ins[0].beep,
-					astart: ins[0].auto_start
+					astart: ins[0].auto_start,
+					email: ins[0].email,
 				};
 				setCfg(pv);
-				console.log(pv);
+				//console.log(pv);
 			}
 		};
 		loadConfig();
@@ -108,7 +111,7 @@ const Settings: React.FC = () => {
 					ups: !prev.ups ? 1 : 0
 				}));
 				window.electronAPI.db.setConfig({id_nb: '1', psd: so});
-				//window.electronAPI.sendNBCommand("Q\r");
+				window.electronAPI.sendNBCommand("S\r");
 				break;
 			case 4:
 				let d = '';
@@ -129,6 +132,9 @@ const Settings: React.FC = () => {
 				break;
 			case 'lowb':
 				window.electronAPI.db.setConfig({id_nb: '1', sl: vl});
+				break;
+			case 'email':
+				window.electronAPI.db.setConfig({id_nb: '1', email: vl});
 				break;
 			default:
 				break;
@@ -189,28 +195,18 @@ const Settings: React.FC = () => {
 									<Form.Check onChange={() => hdlItem(1)} checked={!!cfg.beep} type="switch" id="toggleBeep" label="Desativar Beep" />
 								</Col>
 							</Row>
-							<Row>
-								<Col className="py-3">
-									<Form.Check onChange={() => hdlItem(2)} checked={!!cfg.astart} type="switch" id="toggleInitRun" label="Iniciar o TS App com o sistema" />
-								</Col>
-							</Row>
-							<Row>
-								<Col>
-									<Form.Check onChange={() => hdlItem(3)} checked={!!cfg.psd} type="switch" id="toggleShutdown" label="Desligar o NB após desligar o sistema" />
-								</Col>
-							</Row>
 						</Col>
 						<Col md={5} className="text-secondary">
 							<Row>
 								<Col>
 									<InputGroup>
-										<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-offnet">Desliga o nobreak se ficar sem energia por X minutos</Tooltip>}>
+										<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-offnet">Desliga o nobreak se ficar sem energia depois de X minutos</Tooltip>}>
 										<InputGroup.Text id="sdpf">
 											<IoAlarmOutline />
 										</InputGroup.Text>
 										</OverlayTrigger>
 										<Form.Control
-											placeholder="Desligar sem rede (min)"
+											placeholder="Desligar sem rede após (min)"
 											aria-describedby="basic-addon2"
 											type="number"
 											size="sm"
@@ -220,6 +216,15 @@ const Settings: React.FC = () => {
 									</InputGroup>
 								</Col>
 							</Row>
+						</Col>
+						<Col md={7} className="bgdark text-secondary">
+							<Row>
+								<Col className="py-3">
+									<Form.Check onChange={() => hdlItem(2)} checked={!!cfg.astart} type="switch" id="toggleInitRun" label="Iniciar o TS App com o sistema" />
+								</Col>
+							</Row>
+						</Col>
+						<Col md={5} className="text-secondary">
 							<Row>
 								<Col className="py-3">
 									<InputGroup>
@@ -240,6 +245,30 @@ const Settings: React.FC = () => {
 									</InputGroup>
 								</Col>
 							</Row>
+						</Col>
+						<Col md={7} className="bgdark text-secondary">
+							<Row>
+								<Col className="d-none">
+									<Form.Check onChange={() => hdlItem(3)} checked={!!cfg.psd} type="switch" id="toggleShutdown" label="Desligar o NB após desligar o sistema" />
+								</Col>
+								<Col>
+									<InputGroup>
+										<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-onoff">E-mails para notificação de queda de energia. Aceita até 3 emails separados por virgula.</Tooltip>}>
+											<InputGroup.Text id="turnoffups"><IoMail /></InputGroup.Text>
+										</OverlayTrigger>
+										<Form.Control
+											placeholder="E-mails para notificação, separados por virgula"
+											aria-describedby="basic-addon2"
+											type="mail"
+											size="sm"
+											defaultValue={(cfg.email != '') ? cfg.email : ''}
+											onBlur={(e) => saveThis(e.target.value, 'email')}
+										></Form.Control>
+									</InputGroup>
+								</Col>
+							</Row>
+						</Col>
+						<Col md={5} className="text-secondary">
 							<Row>
 								<Col>
 									<InputGroup>

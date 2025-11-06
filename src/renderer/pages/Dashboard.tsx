@@ -61,6 +61,9 @@ const Dashboard: React.FC = () => {
 			if (hasNB) {
 				await window.electronAPI?.startMonitoring();
 				//console.log('[Init] startMonitoring chamado!');
+				console.log('vai enviar');
+				window.electronAPI.sendNBCommand("S\r");
+				console.log('enviado');
 			}
 		};
 		init();

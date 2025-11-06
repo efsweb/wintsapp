@@ -19,6 +19,11 @@ let monitorPort: SerialPort | null = null;
 let mainWindow: BrowserWindow | null = null;
 let pollingInterval: NodeJS.Timeout | null = null;
 
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const nodemailer = require('nodemailer');
+
 let lastNBData: {
 	input: number;
 	inputFault: number;
@@ -49,15 +54,52 @@ systemShutdownEvent.SetConsoleCtrlHandler(shutdownHandler, true);
 //MAC/LINUX
 process.on('SIGTERM', () => {
   console.log('Sistema está sendo desligado ou reiniciado...');
-  sendCommandToNB("S01\r");
+  //sendCommandToNB("S01\r");
 });
 process.on('SIGINT', () => {
   console.log('Interrupção manual (Ctrl+C) detectada...');
-  sendCommandToNB("S01\r");
+  //sendCommandToNB("S01\r");
   app.quit();
 });
 //** Controla o desligamento do operacional **//
 
+let cachedEmail: string | null = null;
+async function getEmailFromConfig() {
+	if (cachedEmail) return cachedEmail;
+	const cfg = await getConfig();
+	cachedEmail = cfg?.[0]?.email?.trim() || null;
+	return cachedEmail;
+}
+
+const transporter = nodemailer.createTransport({
+	host: 'mail-ssl.m9.network',
+	port: 465,
+	secure: true,
+	auth: {
+		user: 'sistemas@tsshara.com.br',
+		pass: 'stssm21@ea',
+	},
+});
+
+export async function sendMail(message: string){
+	const toEmail = await getEmailFromConfig();
+	//console.log(toEmail);
+	if(toEmail){
+		const mailOptions = {
+			from: 'sistemas@tsshara.com.br',
+			to: toEmail,
+			subject: 'NB Status',
+			text: message,
+		};
+		transporter.sendMail(mailOptions, (error: any, info: any) => {
+			if (error) {
+				console.log('Erro ao enviar e-mail:', error);
+			} else {
+				console.log('E-mail enviado: ' + info.response);
+	    }
+	  });
+	}
+}
 
 export function setNotificationCallback(callback: any) {
 	notifyCallback = callback;
@@ -183,10 +225,11 @@ function parseMsg(msg: string, cmd: string){
 					if((parseInt(sts[0]) == 0)){
 						falha = "Rede OK";
 					}else{
-						console.log('Enviado');
-						sendCommandToNB("S1\r");
+						//console.log('Enviado');
+						//sendCommandToNB("S1\r");
 					}
 					if (notifyCallback) {
+						sendMail(`Alteração de status no Nobreak para: ${falha}`);
 						notifyCallback('NB Status', falha);
 					}
 					saveEvent({
@@ -245,6 +288,7 @@ function parseMsg(msg: string, cmd: string){
 					if(parseInt(sts[5]) == 0){
 						tb = 'Fim do Teste bateria baixa';
 					}
+					sendMail(`Alteração de status no Nobreak para: ${tb}`);
 					saveEvent({
 						event: tb,
 						inputVoltage: toNum(input),
@@ -255,9 +299,14 @@ function parseMsg(msg: string, cmd: string){
 						status: status
 					});
 				}
-				if(parseInt(sts[6]) == 1){
+				if(parseInt(sts[6]) != parseInt(lst[6])){
+					//console.log(clean);
+					let ld = 'Desligamento desativado';
+					if(parseInt(sts[6]) == 1){
+						ld = 'Desligamento ativado';
+					}
 					saveEvent({
-						event: "Desligamento ativo",
+						event: ld,
 						inputVoltage: toNum(input),
 						outputVoltage: toNum(output),
 						battery: toNum(battery),
@@ -368,17 +417,16 @@ async function sendDataToService(prdInfo: any, nbID: string) {
 	}
 }
 
-export function sendCommandToNB(cmd: string) {
+export async function sendCommandToNB(cmd: string) {
 	//console.log("chegou aqui");
 	if (!monitorPort || !monitorPort.isOpen) {
 		console.warn("[Serial] Porta não está aberta.");
 		return false;
 	}
 
-	console.log(`[Serial] Enviando comando manual: ${cmd}`);
+	//console.log(`[Serial] Enviando comando manual: ${cmd}`);
 	switch(cmd){
 		case "A\r":
-
 			break;
 		case "T\r":
 			if (lastNBData) {
@@ -455,36 +503,44 @@ export function sendCommandToNB(cmd: string) {
 			}
 			break;
 		default:
-			console.log('vaio no default');
 			let a = cmd.substring(0,1);
-			console.log('AAA ' + a);
 			if(a == 'S'){
 				console.log('Enviando desligamento');
+				monitorPort.write('T\r');
+				console.log('Enviou o Teste');
+				await new Promise(r => setTimeout(r, 2000));
+				console.log('Esperou 2 segundos');
 				cmd = "S01\r";
 			}else{
-				cmd = cmd.padStart(2, "0");
-				if (lastNBData) {
-					saveEvent({
-						event: `Teste de ${cmd} minutos`,
-						inputVoltage: toNum(String(lastNBData.input)) || 0,
-						outputVoltage: toNum(String(lastNBData.output)) || 0,
-						battery: toNum(String(lastNBData.battery)) || 0,
-						frequency: toNum(String(lastNBData.freq)) || 0,
-						temperature: toNum(String(lastNBData.temp)) || 0,
-						status: lastNBData.status || '00000000'
-					});
-				}else{
-					saveEvent({
-						event: `Teste de ${cmd} minutos`,
-						inputVoltage: 0,
-						outputVoltage: 0,
-						battery: 0,
-						frequency: 0,
-						temperature: 0,
-						status: '00000000'
-					});
+				if(a == 'T'){
+					let n = cmd.replace('T','');//cmd.padStart(2, "0");
+					n = n.padStart(2, "0");
+					if (lastNBData) {
+						saveEvent({
+							event: `Teste de ${cmd} minutos`,
+							inputVoltage: toNum(String(lastNBData.input)) || 0,
+							outputVoltage: toNum(String(lastNBData.output)) || 0,
+							battery: toNum(String(lastNBData.battery)) || 0,
+							frequency: toNum(String(lastNBData.freq)) || 0,
+							temperature: toNum(String(lastNBData.temp)) || 0,
+							status: lastNBData.status || '00000000'
+						});
+					}else{
+						saveEvent({
+							event: `Teste de ${cmd} minutos`,
+							inputVoltage: 0,
+							outputVoltage: 0,
+							battery: 0,
+							frequency: 0,
+							temperature: 0,
+							status: '00000000'
+						});
+					}
+					cmd = `T${n}\r`;
+					console.log('CMD', cmd);
+
 				}
-				cmd = `T${cmd}\r`;
+				/*cmd = `T${cmd}\r`;*/
 			}
 			break;
 	}

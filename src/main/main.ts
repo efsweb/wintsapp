@@ -12,11 +12,14 @@ import { checkInternetConnection } from './network.js';
 import { findDevicePort, watchUSBDevices } from './usbports.js';
 import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode, setNotificationCallback } from './nbmonitor.js';
 
-import { generateHardwareId } from "./utils/hardware-id.js";
 import { setAutoLaunch } from './utils/autolaunch.js';
+import { generateHardwareId } from "./utils/hardware-id.js";
+import { sendNotificationMail } from './utils/mail-sender.js';
 
 import { exec } from "child_process";
 import { createRequire } from "module";
+
+
 //** Fim Imports **//
 
 //** Variaveis **//
@@ -24,6 +27,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const require = createRequire(import.meta.url);
+const nodemailer = require('nodemailer');
 const hardwareId = await generateHardwareId();
 
 let closeDB: any;
@@ -34,6 +38,21 @@ let devicePort: Boolean = false;
 let win: BrowserWindow | null = null;
 let onNBEvent: ((title: string, body: string) => void) | null = null;
 
+const transporter = nodemailer.createTransport({
+      host: 'mail-ssl.m9.network',
+      port: 465,
+      secure: true,
+      auth: {
+          user: 'sistemas@tsshara.com.br',
+          pass: 'stssm21@ea',
+      },
+  });
+  const mailOptions = {
+      from: 'sistemas@tsshara.com.br',
+      to: 'eliel@tsshara.com.br',
+      subject: 'NB Status',
+      text: 'O Status do NB mudou',
+  };
 
 if (process.env.NODE_ENV === "development") {
   const electronReload = require("electron-reload");
@@ -137,7 +156,7 @@ function startUSBWatcher() {
   usbWatcher = watchUSBDevices((connected: boolean) => {
     devicePort = connected;
     if (win && !win.isDestroyed() && win.webContents) {
-      console.log('aquiiiii');
+      //console.log('aquiiiii');
       showNotification(
         'NB Status',
         connected ? 'NB Conectado' : 'NB Disconectado'
@@ -163,6 +182,17 @@ app.whenReady().then(async () => {
   createWindow();
   createTray();
   win?.setSkipTaskbar(true);
+
+  
+  
+  /*transporter.sendMail(mailOptions, (error: any, info: any) => {
+      if (error) {
+          console.log('Erro ao enviar e-mail:', error);
+      } else {
+          console.log('E-mail enviado: ' + info.response);
+      }
+  });*/
+  
 
   // Registra IPCs do banco depois do import
   ipcMain.handle("db:getLastEvents", async (_, limit = 20) => {
@@ -229,7 +259,7 @@ app.whenReady().then(async () => {
       console.log('Shutting down!');
       ElectronShutdownHandler.releaseShutdown();
       win?.webContents.send('shutdown');
-      app.quit();
+      //app.quit();
     });
   }
 
