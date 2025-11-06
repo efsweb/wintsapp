@@ -225,8 +225,19 @@ function parseMsg(msg: string, cmd: string){
 					if((parseInt(sts[0]) == 0)){
 						falha = "Rede OK";
 					}else{
-						//console.log('Enviado');
-						//sendCommandToNB("S1\r");
+						/*const cfg = await getConfig();
+						if(cfg && cfg[0].shutdown_failure > 0){
+							console.log('⚙️ Config: desligar por falta de rede = ON → enviando comando S...');
+							console.log(`Desligar depois de ${cfg[0].shutdown_failure} min`);
+							await sendCommandToNB(`S${cfg[0].shutdown_failure}\r`);
+						}*/
+						getConfig().then(cfg => {
+							if(cfg && cfg[0].shutdown_failure > 0){
+								//console.log('⚙️ Config: desligar por falta de rede = ON → enviando comando S...');
+								console.log(`Desligar depois de ${cfg[0].shutdown_failure} min`);
+								sendCommandToNB(`S${cfg[0].shutdown_failure}\r`);
+							}
+						}).catch(console.error);
 					}
 					if (notifyCallback) {
 						sendMail(`Alteração de status no Nobreak para: ${falha}`);
@@ -247,6 +258,15 @@ function parseMsg(msg: string, cmd: string){
 					let baixa = 'Bateria OK';
 				 	if(parseInt(sts[1]) == 1){
 				 		baixa = 'Bateria Baixa';
+				 		//const cfg = await getConfig();
+						//if(cfg && cfg[0].shutdown_low > 0){
+				 		getConfig().then(cfg => {
+				 			if(cfg && cfg[0].shutdown_low > 0){
+								//console.log('⚙️ Config: desligar por bateria baixa comando S...');
+								console.log(`Desligar depois de ${cfg[0].shutdown_low} min`);
+								sendCommandToNB(`S${cfg[0].shutdown_low}\r`);
+							}
+						}).catch(console.error);
 				 	}
 				 	if (notifyCallback) {
 						notifyCallback('NB Status', baixa);
@@ -505,12 +525,15 @@ export async function sendCommandToNB(cmd: string) {
 		default:
 			let a = cmd.substring(0,1);
 			if(a == 'S'){
-				console.log('Enviando desligamento');
+				let n = cmd.replace('S','');
+				n = n.padStart(2,"0");
+				cmd = `S${n}\r`;
+				/*console.log('Enviando desligamento');
 				monitorPort.write('T\r');
 				console.log('Enviou o Teste');
 				await new Promise(r => setTimeout(r, 2000));
 				console.log('Esperou 2 segundos');
-				cmd = "S01\r";
+				cmd = "S01\r";*/
 			}else{
 				if(a == 'T'){
 					let n = cmd.replace('T','');//cmd.padStart(2, "0");

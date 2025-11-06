@@ -27,7 +27,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const require = createRequire(import.meta.url);
-const nodemailer = require('nodemailer');
 const hardwareId = await generateHardwareId();
 
 let closeDB: any;
@@ -38,21 +37,6 @@ let devicePort: Boolean = false;
 let win: BrowserWindow | null = null;
 let onNBEvent: ((title: string, body: string) => void) | null = null;
 
-const transporter = nodemailer.createTransport({
-      host: 'mail-ssl.m9.network',
-      port: 465,
-      secure: true,
-      auth: {
-          user: 'sistemas@tsshara.com.br',
-          pass: 'stssm21@ea',
-      },
-  });
-  const mailOptions = {
-      from: 'sistemas@tsshara.com.br',
-      to: 'eliel@tsshara.com.br',
-      subject: 'NB Status',
-      text: 'O Status do NB mudou',
-  };
 
 if (process.env.NODE_ENV === "development") {
   const electronReload = require("electron-reload");
@@ -141,7 +125,7 @@ async function createWindow() {
 
   if (process.env.NODE_ENV === "development") {
     await win.loadURL("http://localhost:5173/src/renderer/index.html");
-    win.webContents.openDevTools(); // abre o DevTools na janela Electron
+    //win.webContents.openDevTools(); // abre o DevTools na janela Electron
   } else {
     win.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
@@ -182,18 +166,7 @@ app.whenReady().then(async () => {
   createWindow();
   createTray();
   win?.setSkipTaskbar(true);
-
   
-  
-  /*transporter.sendMail(mailOptions, (error: any, info: any) => {
-      if (error) {
-          console.log('Erro ao enviar e-mail:', error);
-      } else {
-          console.log('E-mail enviado: ' + info.response);
-      }
-  });*/
-  
-
   // Registra IPCs do banco depois do import
   ipcMain.handle("db:getLastEvents", async (_, limit = 20) => {
     return gl(limit);
@@ -246,7 +219,7 @@ app.whenReady().then(async () => {
     });
   });
 
-  win?.webContents.openDevTools({ mode: 'detach' });
+  //win?.webContents.openDevTools({ mode: 'detach' }); //<-- abre o devtools janela independente
   //console.log("Hardware ID:", hardwareId);
   devicePort = await findDevicePort();
   startUSBWatcher();

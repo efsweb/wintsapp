@@ -14,7 +14,7 @@ interface conf {
 	afb: number, //hiberna ou desliga o nb após o tempo de back-up
 	beep: number, //liga ou desliga o beep do NB
 	astart: number, //inicia automaticamente com o S.O
-	email: Text, //emails de disparo
+	email: string, //emails de disparo
 }
 
 const Settings: React.FC = () => {
@@ -27,7 +27,7 @@ const Settings: React.FC = () => {
 		after_backup: number;
 		beep: number;
 		auto_start: number;
-		email: text;
+		email: string;
 	} | null = null;
 
 	const [tmin, setTmin] = useState<number>(0);
@@ -261,7 +261,7 @@ const Settings: React.FC = () => {
 											aria-describedby="basic-addon2"
 											type="mail"
 											size="sm"
-											defaultValue={(cfg.email != '') ? cfg.email : ''}
+											defaultValue={(cfg.email !== '') ? cfg.email : ''}
 											onBlur={(e) => saveThis(e.target.value, 'email')}
 										></Form.Control>
 									</InputGroup>
@@ -280,7 +280,7 @@ const Settings: React.FC = () => {
 											aria-describedby="basic-addon2"
 											type="number"
 											size="sm"
-											disabled={ cfg.ups === 0 }
+											/*disabled={ cfg.ups === 0 }*/
 											defaultValue={(cfg.ups != 0) ? cfg.ups : ''}
 											onBlur={(e) => saveThis(e.target.value, 'onoff')}
 										></Form.Control>
