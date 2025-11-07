@@ -24,7 +24,7 @@ const History: React.FC = () => {
 	const [upddata, setUpddata] = useState(false);
 
 	useEffect(() => {
-		window.electronAPI?.stopMonitoring?.();
+		//window.electronAPI?.stopMonitoring?.();
 		async function fetchHistory() {
 			if (window.electronAPI?.db) {
 				try {

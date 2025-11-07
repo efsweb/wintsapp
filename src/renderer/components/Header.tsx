@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 
 import { Link } from 'react-router-dom';
-import { Row, Col, Image, Nav, Toast, ToastContainer } from "react-bootstrap";
+import { Row, Col, Image, Nav, Tooltip, OverlayTrigger } from "react-bootstrap";
 import { IoPulseOutline, IoSpeedometerOutline, IoTimerOutline, IoCogOutline, IoBuildOutline } from 'react-icons/io5';
 
 import { IoFlashSharp, IoBatteryFullOutline } from 'react-icons/io5';
@@ -76,16 +76,6 @@ const Header: React.FC<HeaderProps> = ({mnuId}) => {
 
 	return(
 		<>
-			<ToastContainer position="top-end" className="p-3">
-				<Toast bg="success" show={show} onClose={() => setShow(false)} delay={2500} autohide>
-					<Toast.Header>
-						Status do Nobreak
-					</Toast.Header>
-					<Toast.Body>
-						Comunicação OK
-					</Toast.Body>
-				</Toast>
-			</ToastContainer>
 			<Row>
 				<Col className="ps-3 pe-3 pb-3 pt-2">
 					<Row>
@@ -124,22 +114,34 @@ const Header: React.FC<HeaderProps> = ({mnuId}) => {
 									NB ID: {nbID}
 								</Col>
 								<Col md={2}>
-									NB: { (stsNB) ?
-										( (stsWifi) ? (<IoWifiOutline className="text-info" />) : (<IoLinkOutline className="text-success" />) ) :
-										(<IoUnlinkOutline className="text-secondary" />) 
-									}
+									<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-offnet">Indica que conseguiu encontrar o NB conectado e se esta conectado</Tooltip>}>
+										<span>
+											NB: { (stsNB) ?
+												( (stsWifi) ? (<IoWifiOutline className="text-info" />) : (<IoLinkOutline className="text-success" />) ) :
+												(<IoUnlinkOutline className="text-secondary" />) 
+											}
+										</span>
+									</OverlayTrigger>
 								</Col>
 								<Col md={2}>
-									Modo: { (stsCnn) ?
-										(<IoFlashSharp className="text-success" />) :
-										(<IoBatteryFullOutline className="text-danger" />)
-									}
+									<OverlayTrigger placement="left" overlay={<Tooltip id="tooltip-offnet">Indica se o NB esta em modo bateria ou rede. Por padrão vem marcado como rede antes de conectar</Tooltip>}>
+										<span>
+											Modo: { (stsCnn) ?
+												(<IoFlashSharp className="text-success" />) :
+												(<IoBatteryFullOutline className="text-danger" />)
+											}
+										</span>
+									</OverlayTrigger>
 								</Col>
 								<Col md={3}>
-									Internet: { (stsNet) ?
-										(<IoCloudDone className="text-success" />) :
-										(<IoCloudOfflineOutline className="text-secondary" />)
-									}
+									<OverlayTrigger placement="left" overlay={<Tooltip id="tooltip-offnet">Indica se seu computador esta conectado à Internet para enviar emails/dados para o TSApp</Tooltip>}>
+										<span>
+											Internet: { (stsNet) ?
+												(<IoCloudDone className="text-success" />) :
+												(<IoCloudOfflineOutline className="text-secondary" />)
+											}
+										</span>
+									</OverlayTrigger>
 								</Col>
 							</Row>
 						</Col>

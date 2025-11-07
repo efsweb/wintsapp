@@ -119,7 +119,6 @@ async function createWindow() {
   });
 
   ipcMain.handle('bdconn', async() => {
-    //const { getLastEvents } = await "../utils/dbconn.js";
     return getLastEvents();
   });
 
