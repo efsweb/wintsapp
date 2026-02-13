@@ -23,6 +23,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   ping: () => ipcRenderer.invoke('ping'),
   platform: process.platform,
 
+  tswifi: {
+    scan: () => ipcRenderer.invoke("tswifi:scan"),
+    conn: (nt: string, pw: string, nb: string) => ipcRenderer.invoke("tswifi:conn", nt, pw, nb)
+  },
+
   //dbconn: () => ipcRenderer.invoke('bdconn'),
   db: {
     getLastEvents: (limit = 20) =>

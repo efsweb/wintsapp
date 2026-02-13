@@ -2,6 +2,7 @@
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
 import { resolveModuleURL } from "./path-resolver.js";
+import { dataBus } from "./databus.js";
 
 import axios from 'axios';
 //import ffi from 'ffi-napi';
@@ -11,6 +12,7 @@ import { app, BrowserWindow } from 'electron';
 import { saveEvent, getConfig } from "./utils/dbconn.js";
 
 import { getCurrentDevicePort } from './usbports.js';
+import { mqttStart, mqttSendCommand } from "./utils/mqtt-srv.js";
 
 let notifyCallback: ((title: string, body: string) => void) | null = null;
 let nbID: string | null = null;
@@ -23,6 +25,8 @@ let pollingInterval: NodeJS.Timeout | null = null;
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const nodemailer = require('nodemailer');
+
+let waitingGIP = false;
 
 let lastNBData: {
 	input: number;
@@ -113,7 +117,11 @@ export function registerMainWindow(win: BrowserWindow, id: string) {
 export async function startMonitoring() {
 	const portPath = getCurrentDevicePort();
 
-	if (!portPath) return;
+	//if (!portPath) return;
+	if (!portPath) {
+		mqttStart(nbID!); // MQTT
+		return;
+	}
 
 	if(monitorPort && monitorPort.isOpen){
 		console.error('[Serial] esta aberta:');
@@ -149,9 +157,16 @@ export async function startMonitoring() {
 
 		if (!cleanLine) return;
 
+		dataBus.emit("raw", {
+			source: "UART",
+			payload: cleanLine
+		});
+/*
 		let result: any = '';
 		if(tensaonominal == 0){
 			result = parseMsg(cleanLine, 'F');
+		}else if(cleanLine.startsWith('AC')){
+			result = parseMsg(cleanLine, 'GIP');
 		}else{
 			result = parseMsg(cleanLine, 'Q1');
 		}
@@ -161,7 +176,7 @@ export async function startMonitoring() {
 			//console.log('[NBMonitor] Dados enviados ao renderer:', result);
 		} else {
 			//console.warn('[NBMonitor] Dados inválidos ou janela não disponível.');
-		}
+		}*/
 	});
 
 	monitorPort.on('error', (err) => {
@@ -390,6 +405,11 @@ function parseMsg(msg: string, cmd: string){
 				return null;
 			}
 			break;
+		case 'GIP':
+			console.log('---MSG---');
+			console.log(msg);
+			console.log('---MSG---');
+			break;
 		default:
 			break;
 	}
@@ -439,11 +459,7 @@ async function sendDataToService(prdInfo: any, nbID: string) {
 
 export async function sendCommandToNB(cmd: string) {
 	//console.log("chegou aqui");
-	if (!monitorPort || !monitorPort.isOpen) {
-		console.warn("[Serial] Porta não está aberta.");
-		return false;
-	}
-
+	
 	//console.log(`[Serial] Enviando comando manual: ${cmd}`);
 	switch(cmd){
 		case "A\r":
@@ -567,8 +583,23 @@ export async function sendCommandToNB(cmd: string) {
 			}
 			break;
 	}
-	monitorPort.write(cmd);
-	return true;
+	if (monitorPort && monitorPort.isOpen) {
+    monitorPort.write(cmd);
+    return true;
+  }
+  
+  //return false;
+	//monitorPort.write(cmd);
+	//return true;
+
+
+  /*if (nbID) {
+    mqttSendCommand(nbID, cmd);
+    return true;
+  }*/
+
+  console.warn("❌ Nenhum canal disponível para enviar comando");
+  return false;
 }
 
 export function checkMode(){
@@ -580,3 +611,27 @@ export function checkMode(){
 	}
 	return true;
 }
+
+dataBus.on("raw", (data) => {
+  const cleanLine = data.payload;
+
+  if (waitingGIP) {
+    waitingGIP = false;
+    console.log("Retorno GIP recebido:", cleanLine);
+    return;
+  }
+
+  let result: any = null;
+
+  if (tensaonominal === 0) {
+    result = parseMsg(cleanLine, 'F');
+  } else if (cleanLine.startsWith('AC')) {
+    result = parseMsg(cleanLine, 'GIP');
+  } else {
+    result = parseMsg(cleanLine, 'Q1');
+  }
+
+  if (mainWindow && result) {
+    mainWindow.webContents.send('nb-data', result);
+  }
+});

@@ -1,6 +1,6 @@
 //settings.tsx
 import React, {useEffect, useState} from 'react';
-import { IoAlarmOutline, IoMail } from 'react-icons/io5';
+import { IoAlarmOutline, IoMail, IoWifi, IoLockClosed } from 'react-icons/io5';
 import { Row, Col, Button, Card, InputGroup, Form, Toast, ToastContainer, Tooltip, OverlayTrigger } from "react-bootstrap";
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -15,10 +15,11 @@ interface conf {
 	beep: number, //liga ou desliga o beep do NB
 	astart: number, //inicia automaticamente com o S.O
 	email: string, //emails de disparo
+	wifiuser: string, //nome da rede
+	wifipass: string, //senha da rede
 }
 
 const Settings: React.FC = () => {
-
 	let nbConfig: {
 		shutdown_failure: number;
 		shutdown_low: number;
@@ -28,11 +29,14 @@ const Settings: React.FC = () => {
 		beep: number;
 		auto_start: number;
 		email: string;
+		wifiuser: string;
+		wifipass: string;
 	} | null = null;
 
-	const [tmin, setTmin] = useState<number>(0);
 	const [show, setShow] = useState(false);
-	const [cfg, setCfg] = useState<conf>({id_nb: '', shutdown_failure: 0, sl: 0, ups: 0, psd: 0, afb: 0, beep: 0, astart: 0, email: ''});
+	const [tmin, setTmin] = useState<number>(0);
+	const [ldClear, setLdClear] = useState(false);
+	const [cfg, setCfg] = useState<conf>({id_nb: '', shutdown_failure: 0, sl: 0, ups: 0, psd: 0, afb: 0, beep: 0, astart: 0, email: '', wifiuser: '', wifipass: ''});
 	
 	const sendTest = (kind: string) => {
 		switch(kind){
@@ -61,6 +65,7 @@ const Settings: React.FC = () => {
 		async function loadConfig(){
 			//console.log('no load');
 			let ins = await window.electronAPI.db.getConfig();
+			//console.log(ins);
 			if(ins.length > 0){
 				const pv = {
 					id_nb: ins[0].id_nb,
@@ -72,6 +77,8 @@ const Settings: React.FC = () => {
 					beep: ins[0].beep,
 					astart: ins[0].auto_start,
 					email: ins[0].email,
+					wifiuser: ins[0].wifiuser ?? '',
+					wifipass: ins[0].wifipass ?? '',
 				};
 				setCfg(pv);
 				//console.log(pv);
@@ -141,6 +148,19 @@ const Settings: React.FC = () => {
 		}
 	}
 
+	const getIP = async () => {
+		//setLdClear(true);
+		const x = await window.electronAPI.db.setConfig({id_nb: '1', wifiuser: cfg.wifiuser, wifipass: cfg.wifipass});
+		const id = await window.electronAPI.getNBID();
+		//const chk = await window.electronAPI.tswifi.scan();
+		//console.log(chk);
+		/*if(chk){
+			await window.electronAPI.tswifi.conn(cfg.wifiuser, cfg.wifipass, id);
+			setLdClear(false);
+			return;
+		}*/
+	}
+
 	return(
 		<>
 			<ToastContainer position="top-end" className="p-3">
@@ -158,10 +178,56 @@ const Settings: React.FC = () => {
 				<Col>
 					<Row>
 						<Col>
+							<h5 className="text-secondary">Conectividade NB Wi-Fi</h5>
+						</Col>
+					</Row>
+					<Row className="mb-2 pb-3">
+						<Col>
+							<InputGroup>
+								<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-offnet">Nome da rede que o NB deve conectar</Tooltip>}>
+								<InputGroup.Text id="wifiname">
+									<IoWifi />
+								</InputGroup.Text>
+								</OverlayTrigger>
+								<Form.Control
+									placeholder="Nome da rede wifi"
+									aria-describedby="basic-addon2"
+									type="text"
+									size="sm"
+									onChange={(e) => setCfg(prev => ({ ...prev, wifiuser: e.target.value }))}
+									value={ cfg.wifiuser }
+								></Form.Control>
+							</InputGroup>
+						</Col>
+						<Col>
+							<InputGroup>
+								<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-offnet">Senha da rede onde o NB deve se conectar</Tooltip>}>
+								<InputGroup.Text id="wifipass">
+									<IoLockClosed />
+								</InputGroup.Text>
+								</OverlayTrigger>
+								<Form.Control
+									placeholder="Informe a senha da rede"
+									aria-describedby="basic-addon2"
+									type="password"
+									size="sm"
+									onChange={(e) => setCfg(prev => ({ ...prev, wifipass: e.target.value }))}
+									value={ cfg.wifipass }
+								></Form.Control>
+							</InputGroup>
+						</Col>
+						<Col className="text-center">
+							<Button size="sm" variant="outline-light"  disabled={ldClear} onClick={!ldClear ? getIP : undefined} className="py-1">
+								{ldClear ? 'Carregando…' : 'Sync Módulo Wifi'}
+							</Button>
+						</Col>
+					</Row>
+					<Row>
+						<Col>
 							<h5 className="text-secondary">Teste o seu NB</h5>
 						</Col>
 					</Row>
-					<Row className="mb-3 pb-3">
+					<Row className="mb-2 pb-3">
 						<Col md={4}>
 							<Button variant="secondary" onClick={() => sendTest('a')}>Teste de 10 segundos</Button>
 						</Col>

@@ -7,8 +7,17 @@ import { open } from 'sqlite';
 
 let db: any;
 
+interface ColumnInfo {
+    cid: number;
+    name: string;
+    type: string;
+    notnull: number;
+    dflt_value: any;
+    pk: number;
+}
 
 export async function initDB() {
+	console.log('iniciando db');
 	if (db) return db;
 
 	const dbPath = path.join(app.getPath("userData"), "nb.db");
@@ -41,8 +50,25 @@ export async function initDB() {
 		ups_down_after INTEGER,
 		after_backup INTEGER,
 		beep INTEGER,
-		auto_start INTEGER)
+		auto_start INTEGER,
+		wifiuser TEXT,
+		wifipass TEXT)
 	`);
+
+	// MIGRATIONS
+	const columns = (await db.all(`PRAGMA table_info(cfg)`)) as ColumnInfo[];
+
+	// wifiuser
+	if (!columns.some((c: ColumnInfo) => c.name === "wifiuser")) {
+	    await db.exec(`ALTER TABLE cfg ADD COLUMN wifiuser TEXT`);
+	    console.log("Migration: wifiuser added!");
+	}
+
+	// wifipass
+	if (!columns.some((c: ColumnInfo) => c.name === "wifipass")) {
+	    await db.exec(`ALTER TABLE cfg ADD COLUMN wifipass TEXT`);
+	    console.log("Migration: wifipass added!");
+	}
 
 	return db;
 }
@@ -90,13 +116,13 @@ export async function closeDB() {
 	}
 }
 
-export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; ups?: number; psd?: number; afb?: number; beep?: number; astart?: number}){
+export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; ups?: number; psd?: number; afb?: number; beep?: number; astart?: number, wifiuser?: string, wifipass?: string}){
 	const cnn = await initDB();
 	let chk = await getConfig();
 	if(!chk || chk.length === 0){
 		await cnn.run(`
-			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start)
-			values (?, ?, ?, ?, ?, ?, ?, ?)`,
+			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start, wifiuser, wifipass)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				'1',
 				lnp.sf ?? 0,
@@ -105,14 +131,16 @@ export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; u
 				lnp.psd ?? 0,
 				lnp.afb ?? 0,
 				lnp.beep ?? 0,
-				lnp.astart ?? 0
+				lnp.astart ?? 0,
+				lnp.wifiuser ?? '',
+				lnp.wifipass ?? ''
 		]);
 	}else{
 		await cnn.run(
 			`
 			UPDATE cfg 
 			SET 
-				id_nb = ?, shutdown_failure = ?, shutdown_low = ?, ups_shutdown = ?, ups_down_after = ?, after_backup = ?, beep = ?, auto_start = ?
+				id_nb = ?, shutdown_failure = ?, shutdown_low = ?, ups_shutdown = ?, ups_down_after = ?, after_backup = ?, beep = ?, auto_start = ?, wifiuser = ?, wifipass = ?
 			WHERE id = ?;
 			`,
 			[
@@ -124,6 +152,8 @@ export async function setConfig(lnp: {id_nb: string; sf?: number; sl?: number; u
 				lnp.afb ?? chk[0].after_backup,
 				lnp.beep ?? chk[0].beep,
 				lnp.astart ?? chk[0].auto_start,
+				lnp.wifiuser ?? chk[0].wifiuser,
+				lnp.wifipass ?? chk[0].wifipass,
 				chk[0].id // id atual no banco
 			]
 		);
@@ -135,15 +165,16 @@ export async function getConfig(){
 	let sl = await cnn.all(
 		`SELECT * FROM cfg WHERE id_nb = '1'`
 	);
-
+	console.log(cnn);
 	if(sl.length <= 0){
 		await cnn.run(`
-			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start)
-			values (?, ?, ?, ?, ?, ?, ?, ?)`,['1',0,0,0,0,0,0,0]);
+			INSERT INTO cfg (id_nb, shutdown_failure, shutdown_low, ups_shutdown, ups_down_after, after_backup, beep, auto_start, wifiuser, wifipass)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,['1',0,0,0,0,0,0,0,'','']);
 		sl = await cnn.all(
 			`SELECT * FROM cfg WHERE id_nb = '1'`
 		);
 	}
+	console.log(sl);
 	return sl;
 }
 

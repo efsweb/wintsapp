@@ -19,6 +19,11 @@ declare global {
 
       platform: string;
 
+      tswifi: {
+        scan: () => Promise<any>;
+        conn: (nt: string, pw: string, nb: string) => Promise<any>;
+      };
+
       db: {
         getLastEvents: (limit?: number) => Promise<any>;
         saveEvent: (eventData: any) => Promise<any>;

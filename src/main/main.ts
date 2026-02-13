@@ -1,14 +1,14 @@
 // src/main/main.ts
 
 //** Imports **//
-import ElectronShutdownHandler from '@paymoapp/electron-shutdown-handler';
+//import ElectronShutdownHandler from '@paymoapp/electron-shutdown-handler';
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification } from "electron";
 
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { SerialPort } from 'serialport';
 
-import { checkInternetConnection } from './network.js';
+import { checkInternetConnection, findFirmware, connFirmware } from './network.js';
 import { findDevicePort, watchUSBDevices } from './usbports.js';
 import { startMonitoring, stopMonitoring, registerMainWindow, sendCommandToNB, checkMode, setNotificationCallback } from './nbmonitor.js';
 
@@ -66,7 +66,7 @@ async function createWindow() {
     closable: true,
     resizable: false,
     transparent: false,
-    show: false, // <-- Inicia oculto quando false
+    //show: false, // <-- Inicia oculto quando false
     center: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'), // Adjust path as needed
@@ -82,6 +82,14 @@ async function createWindow() {
   ipcMain.handle('get-internet-status', async () => {
     const isOnline = await checkInternetConnection();
     return isOnline;  // Retorna o status da internet ao renderer
+  });
+
+  ipcMain.handle('tswifi:scan', async() => {
+    return findFirmware();
+  });
+
+  ipcMain.handle('tswifi:conn', async(_event, nt: string, pw: string, nb: string) => {
+    return connFirmware(nt, pw, nb);
   });
 
   ipcMain.handle('get-mode-status', async () => {
@@ -104,7 +112,6 @@ async function createWindow() {
   });
 
   ipcMain.handle('nb-cmd', async(_event, cmd: string) => {
-    console.log('comando chamado');
     try{
       const ok = sendCommandToNB(cmd);
       return true;
@@ -154,13 +161,13 @@ app.whenReady().then(async () => {
   app.setAppUserModelId('br.com.tsappfordesktop');
   const dbPath = path.resolve(__dirname, "./utils/dbconn.js");
 
-  const { getLastEvents: gl, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
+  const { initDB, getLastEvents, saveEvent, setConfig, getConfig, cleanDatabase, closeDB: cdb } = 
   await import(process.platform === "win32" ? pathToFileURL(dbPath).href : dbPath);
   
   setNotificationCallback((title: string, body: string) => showNotification(title, body));
 
-  getLastEvents = gl;
-  closeDB = cdb;
+  //getLastEvents = getLastEvents;
+  //closeDB = cdb;
 
   createWindow();
   createTray();
@@ -168,7 +175,7 @@ app.whenReady().then(async () => {
   
   // Registra IPCs do banco depois do import
   ipcMain.handle("db:getLastEvents", async (_, limit = 20) => {
-    return gl(limit);
+    return getLastEvents(limit);
   });
 
   ipcMain.handle("db:saveEvent", async (_, eventData) => {
@@ -222,7 +229,7 @@ app.whenReady().then(async () => {
   //console.log("Hardware ID:", hardwareId);
   devicePort = await findDevicePort();
   startUSBWatcher();
-  if(win){
+  /*if(win){
     ElectronShutdownHandler.setWindowHandle(win.getNativeWindowHandle());
     ElectronShutdownHandler.blockShutdown('Please wait for some data to be saved');
 
@@ -233,7 +240,7 @@ app.whenReady().then(async () => {
       win?.webContents.send('shutdown');
       //app.quit();
     });
-  }
+  }*/
 
   win?.on("close", (event) => {
     if (!isQuiting) {

@@ -46,7 +46,7 @@ const Dashboard: React.FC = () => {
 			//console.log('[NBStatus] Status atualizado:', status);
 			if (status) {
 				await window.electronAPI?.startMonitoring();
-				console.log('[NBStatus] startMonitoring chamado!');
+				//console.log('[NBStatus] startMonitoring chamado!');
 			}
 		});
 
@@ -61,9 +61,9 @@ const Dashboard: React.FC = () => {
 			if (hasNB) {
 				await window.electronAPI?.startMonitoring();
 				//console.log('[Init] startMonitoring chamado!');
-				console.log('vai enviar');
-				window.electronAPI.sendNBCommand("S\r");
-				console.log('enviado');
+				//console.log('vai enviar');
+				//window.electronAPI.sendNBCommand("gip\r");
+				//console.log('enviado');
 			}
 		};
 		init();
@@ -257,7 +257,7 @@ const Dashboard: React.FC = () => {
 			      									}
 			      								]
 		      							}} />
-	      							<Card.Text className="text-center text-light">Tempêratura</Card.Text>
+	      							<Card.Text className="text-center text-light">Temperatura</Card.Text>
 	      						</Card.Body>
 	      					</Card>
 	      				</Col>

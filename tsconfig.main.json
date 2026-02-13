@@ -12,7 +12,8 @@
   },
   "include": [
     "src/main/**/*",   // Inclui o código do main
-    "src/preload/**/*" // Inclui o código do preload
+    "src/preload/**/*", // Inclui o código do preload
+    "src/types/**/*.d.ts"
   ],
   "exclude": ["node_modules"]
 }

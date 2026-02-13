@@ -1,12 +1,34 @@
 // src/main/usbports.ts
 import { SerialPort } from 'serialport';
 import { saveEvent } from "./utils/dbconn.js";
+import { generateHardwareId } from "./utils/hardware-id.js";
+import { mqttStart, mqttSendCommand } from "./utils/mqtt-srv.js";
 
 let currentPorts: string[] = [];
 let onDeviceDisconnected: (() => void) | null = null;
 let detectedPortPath: string | null = null;
 
 export async function findDevicePort(): Promise<boolean> {
+    const foundUSB = await scanUSB();
+    if(foundUSB){
+        return true;
+    }
+    scanMQTT();
+    return false;
+}
+
+async function scanMQTT(): Promise<boolean>{
+    let id = generateHardwareId();
+    //mqttStart(id);
+    
+    setTimeout(() => {
+        mqttSendCommand("I\r\n");
+    }, 500);
+
+    return false;
+}
+
+async function scanUSB(): Promise<boolean>{
     const ports = await SerialPort.list();
 
     for (const pinfo of ports) {
@@ -15,6 +37,11 @@ export async function findDevicePort(): Promise<boolean> {
             baudRate: 2400,
             autoOpen: false,
         });
+        let chk = pinfo.path.toLowerCase();
+        if(chk.includes("bluetooth") || chk.includes("blth")){
+            continue;
+        }
+        //console.log(pinfo.path);
 
         try {
             await new Promise<void>((resolve, reject) => {
@@ -25,15 +52,17 @@ export async function findDevicePort(): Promise<boolean> {
             });
 
             const result = await new Promise<string>((resolve, reject) => {
+                //console.log('buscando result');
                 let responseBuffer = '';
                 let timeout = setTimeout(() => {
+                    port.off('data', onData);
                     if (port.isOpen) port.close();
                     resolve(responseBuffer);
-                }, 1000);
+                }, 3000);
 
                 const onData = (data: Buffer) => {
                     responseBuffer += data.toString();
-                    //console.log(`📦 Parcial recebida de ${pinfo.path}:`, data.toString());
+                    console.log(`📦 Parcial recebida de ${pinfo.path}:`, data.toString());
                     if (responseBuffer.includes('TS')) {
                         clearTimeout(timeout);
                         port.off('data', onData);
@@ -41,7 +70,6 @@ export async function findDevicePort(): Promise<boolean> {
                         resolve(responseBuffer);
                     }
                 }
-
                 port.on('data', onData);
 
                 /*port.once('data', (data) => {
@@ -51,9 +79,12 @@ export async function findDevicePort(): Promise<boolean> {
 
                 port.write('I\r\n', (err) => {
                     if (err) {
+                        console.log("Error:    ", err);
                         clearTimeout(timeout);
                         port.off('data', onData);
                         reject(err);
+                    }else{
+                        //console.log('enviou o comando');
                     }
                 });
             });
@@ -61,7 +92,7 @@ export async function findDevicePort(): Promise<boolean> {
             //console.log(`Resposta da final ${pinfo.path}:`, result);
 
             if (result.includes('TS')) {
-                saveEvent({ event: "Comunicação OK" });
+                //saveEvent({ event: "Comunicação OK" });
                 //console.log('🎯 Dispositivo encontrado na porta:', pinfo.path);
                 detectedPortPath = pinfo.path;
                 return true;
