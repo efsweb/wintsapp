@@ -31,14 +31,14 @@ async function refreshScan() {
 
 //Busca rede AP da TS-253
 export async function findFirmware(){
-    console.log('buscando rede');
+    //console.log('buscando rede');
     try{
         await refreshScan();
         const networks = await wifi.scan();
         return networks.find((net: any) => net.ssid === 'TS_NET_COM') || null;
         //return 'ahhahah';
     }catch (err) {
-        console.error("Erro ao escanear redes:", err);
+        //console.error("Erro ao escanear redes:", err);
         return null;
     }
 }
@@ -48,13 +48,13 @@ async function chkNetwork(): Promise<string | null>{
         const connections = await wifi.getCurrentConnections();
 
         if (connections.length > 0 && connections[0].ssid) {
-            console.log(connections[0].ssid);
+            //console.log(connections[0].ssid);
             return connections[0].ssid;
         }
-        console.log('Sem WIFI');
+        //console.log('Sem WIFI');
         return null;
     } catch (err) {
-        console.error("Erro ao obter rede atual:", err);
+        //console.error("Erro ao obter rede atual:", err);
         return null;
     }
 }
@@ -75,6 +75,7 @@ async function waitIP(timeout = 2000) {
 //Faz o Handshake entre TS-253 e Desktop
 let previousSSID: string | null = null;
 export async function connFirmware(ssid: string, pass: string, nb: string){
+    console.log('to aqui');
     /*previousSSID = await chkNetwork();
     console.log("Rede anterior salva:", previousSSID);
 
@@ -93,8 +94,6 @@ export async function connFirmware(ssid: string, pass: string, nb: string){
         console.error("Erro ao conectar:", err);
         return false;
     }*/
-
-
 
     /*const urimqtt = 'mqtt://tsapp.com.br:1883';
     const climqtt = mqtt.connect(urimqtt, {
@@ -123,7 +122,7 @@ export async function connFirmware(ssid: string, pass: string, nb: string){
 
 async function reconnectPreviousNetwork(pass?: string) {
     if (!previousSSID) {
-        console.warn("Nenhuma rede anterior salva.");
+        //console.warn("Nenhuma rede anterior salva.");
         return false;
     }
 
@@ -133,11 +132,11 @@ async function reconnectPreviousNetwork(pass?: string) {
             password: pass
         });
 
-        console.log("Reconectado à rede:", previousSSID);
+        //console.log("Reconectado à rede:", previousSSID);
         return true;
 
     } catch (err) {
-        console.error("Erro ao reconectar:", err);
+        //console.error("Erro ao reconectar:", err);
         return false;
     }
 }

@@ -13,12 +13,13 @@ export async function findDevicePort(): Promise<boolean> {
     if(foundUSB){
         return true;
     }
-    scanMQTT();
+    //scanMQTT();
     return false;
 }
 
 async function scanMQTT(): Promise<boolean>{
     let id = generateHardwareId();
+    console.log('ID HD ', id);
     //mqttStart(id);
     
     setTimeout(() => {
@@ -37,11 +38,11 @@ async function scanUSB(): Promise<boolean>{
             baudRate: 2400,
             autoOpen: false,
         });
+
         let chk = pinfo.path.toLowerCase();
         if(chk.includes("bluetooth") || chk.includes("blth")){
             continue;
         }
-        //console.log(pinfo.path);
 
         try {
             await new Promise<void>((resolve, reject) => {
@@ -62,7 +63,7 @@ async function scanUSB(): Promise<boolean>{
 
                 const onData = (data: Buffer) => {
                     responseBuffer += data.toString();
-                    console.log(`📦 Parcial recebida de ${pinfo.path}:`, data.toString());
+                    //console.log(`📦 Parcial recebida de ${pinfo.path}:`, data.toString());
                     if (responseBuffer.includes('TS')) {
                         clearTimeout(timeout);
                         port.off('data', onData);
@@ -141,6 +142,7 @@ export function watchUSBDevices(onChange: (connected: boolean) => void) {
             if(found !== prevConnectedStatus){
                 prevConnectedStatus = found;
                 onChange(found);
+                //sendOfflineState();
             }
         }
 
@@ -150,7 +152,7 @@ export function watchUSBDevices(onChange: (connected: boolean) => void) {
             onChange(found);
         }*/
 
-    }, 9000);
+    }, 8000);
 
     return {
         stop() {

@@ -12,7 +12,7 @@ import { app, BrowserWindow } from 'electron';
 import { saveEvent, getConfig } from "./utils/dbconn.js";
 
 import { getCurrentDevicePort } from './usbports.js';
-import { mqttStart, mqttSendCommand } from "./utils/mqtt-srv.js";
+import { mqttStart, mqttSendCommand, mqttPublishData } from "./utils/mqtt-srv.js";
 
 let notifyCallback: ((title: string, body: string) => void) | null = null;
 let nbID: string | null = null;
@@ -116,11 +116,12 @@ export function registerMainWindow(win: BrowserWindow, id: string) {
 
 export async function startMonitoring() {
 	const portPath = getCurrentDevicePort();
-
-	//if (!portPath) return;
+	//console.log('passou aqui');
 	if (!portPath) {
-		mqttStart(nbID!); // MQTT
+		sendOfflineState();
 		return;
+	}else{
+		mqttStart(nbID!); // MQTT
 	}
 
 	if(monitorPort && monitorPort.isOpen){
@@ -143,7 +144,6 @@ export async function startMonitoring() {
 		if(tensaonominal == 0){
 			sendCMD('F\r');
 		}
-		//sendCMD('T\r\n');
 		pollingInterval = setInterval(() => {
 			sendCMD('Q1\r\n');
 		}, 2000);
@@ -176,11 +176,13 @@ export async function startMonitoring() {
 			//console.log('[NBMonitor] Dados enviados ao renderer:', result);
 		} else {
 			//console.warn('[NBMonitor] Dados inválidos ou janela não disponível.');
-		}*/
+		}
+*/
 	});
 
 	monitorPort.on('error', (err) => {
 		console.log('deu ruim');
+		sendOfflineState();
 		//se precisar monitorar futuro
 	});
 
@@ -190,6 +192,7 @@ export async function startMonitoring() {
 			pollingInterval = null;
 		}
 		monitorPort = null;
+		sendOfflineState();
 	});
 }
 
@@ -213,7 +216,22 @@ function sendCMD(cmd: string){
 const toNum = (nm: string) => {
 	const n = parseFloat(nm);
 	return isNaN(n) ? 0 : n;
-} 
+}
+
+function sendOfflineState() {
+	if (mainWindow) {
+		mainWindow.webContents.send('nb-data', {
+			inputVoltage: 0,
+			inputFaultVoltage: 0,
+			outputVoltage: 0,
+			current: 0,
+			frequency: 0,
+			battery: 0,
+			temperature: 0,
+			status: 'OFFLINE'
+		});
+	}
+}
 
 function parseMsg(msg: string, cmd: string){
 	switch(cmd){
@@ -379,8 +397,9 @@ function parseMsg(msg: string, cmd: string){
 
 				//console.log(parseFloat(output));
 				//console.log('X: ' + parseFloat(inputFault));
-
-				let bt = calcSOC(parseFloat(battery),12);
+				const rawBattery = parseFloat(battery) || 0;
+				let nm = rawBattery > 18 ? 24 : 12;
+				let bt = calcSOC(rawBattery,nm);
 				return {
 					inputVoltage: parseFloat(input) || 0,
 					inputFaultVoltage: parseFloat(inputFault) || 0,
@@ -444,7 +463,17 @@ function calcSOC(bat: number, nom: number): number{
 }
 
 async function sendDataToService(prdInfo: any, nbID: string) {
-	const dt = moment().format('YYYY-MM-DD HH:mm:ss');
+	if (!nbID) return;
+
+  const payload = {
+    ts: Date.now(),
+    nbID,
+    raw: prdInfo
+  };
+
+  mqttPublishData('telemetry', JSON.stringify(prdInfo));
+
+	/*const dt = moment().format('YYYY-MM-DD HH:mm:ss');
 	//https://service.tsapp.com.br/tsapp/?a=B543-FE5E-023D&b=2025-10-14%2013:53:56&c=%22128.0%20128.0%20128.0%20000%2059.0%2013.4%2028.0%2010001001%2012%22
 	//console.log(dt);
 	try {
@@ -454,7 +483,7 @@ async function sendDataToService(prdInfo: any, nbID: string) {
 		//console.log('Dados enviados com sucesso');
 	} catch (err) {
 		//console.error('Erro ao enviar dados:', err);
-	}
+	}*/
 }
 
 export async function sendCommandToNB(cmd: string) {
@@ -635,3 +664,4 @@ dataBus.on("raw", (data) => {
     mainWindow.webContents.send('nb-data', result);
   }
 });
+

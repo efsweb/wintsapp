@@ -18,8 +18,6 @@ import { sendNotificationMail } from './utils/mail-sender.js';
 
 import { exec } from "child_process";
 import { createRequire } from "module";
-
-
 //** Fim Imports **//
 
 //** Variaveis **//
@@ -45,7 +43,6 @@ if (process.env.NODE_ENV === "development") {
     awaitWriteFinish: true,
   });
 }
-
 //** Fim Variaveis **//
 
 export function registerNBNotificationCallback(callback: (title: string, body: string) => void) {

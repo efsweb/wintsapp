@@ -43,7 +43,7 @@ async function getDiskSerial(): Promise<string> {
               'powershell -NoProfile -Command "Get-PhysicalDisk | Select -ExpandProperty SerialNumber"'
             );
             const match = stdout.match(/[A-Za-z0-9_-]+/);
-            console.log("veioooo");
+            //console.log("veioooo");
             return match ? match[0].trim() : "UNKNOWN";
           } catch {
             // Fallback: WMI antigo
