@@ -42,6 +42,7 @@
       }
     ],
     "win": {
+      "npmRebuild": false,
       "target": [
         "nsis",
         "msi"
