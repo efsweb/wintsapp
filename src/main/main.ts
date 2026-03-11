@@ -63,7 +63,7 @@ async function createWindow() {
     closable: true,
     resizable: false,
     transparent: false,
-    //show: false, // <-- Inicia oculto quando false
+    show: false, // <-- Inicia oculto quando false
     center: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'), // Adjust path as needed
