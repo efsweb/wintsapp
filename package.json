@@ -19,6 +19,8 @@
   "build": {
     "appId": "br.com.tsappfordesktop",
     "productName": "TSApp Desktop",
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
     "extends": null,
     "asar": true,
     "asarUnpack": [
@@ -42,7 +44,6 @@
       }
     ],
     "win": {
-      "npmRebuild": false,
       "target": [
         "nsis",
         "msi"
